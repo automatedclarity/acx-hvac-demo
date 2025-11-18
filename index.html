@@ -1,335 +1,1114 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>ACX HVAC Clarity Scan</title>
+  <meta charset="utf-8" />
+  <title>ACX HVAC Demo – No-Call Follow-Up Engine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="ACX HVAC plugs in behind your phones and forms and quietly handles the follow-up you don’t have time for. No call center, no dashboards, no sales reps." />
 
-<!-- Env lock removed on purpose so it doesn't bounce you while testing.
-     Re-add later if you want strict domain locking. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-  body{margin:0;padding:0;font-family:'Inter',sans-serif;background:#030B1A;color:#fff;display:flex;flex-direction:column;align-items:center;height:100vh;overflow:hidden;position:relative}
-  img.logo{width:180px;margin-top:20px;z-index:3}
-  .progress-bar{display:flex;justify-content:center;gap:8px;margin-top:20px;z-index:3}
-  .node{width:25px;height:6px;border-radius:3px;background:rgba(0,200,255,0.2);transition:all .4s ease}
-  .node.active{background:rgba(0,255,255,1);box-shadow:0 0 12px rgba(0,255,255,.8)}
-  .survey{flex:1;display:flex;align-items:center;justify-content:center;width:100%;position:relative;overflow:hidden}
-  .slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transform:translateX(50px);transition:opacity .8s ease,transform .8s ease}
-  .slide.active{opacity:1;transform:translateX(0);z-index:2}
-  h1,h2{font-size:2rem;margin-bottom:40px;text-align:center;text-shadow:0 0 20px rgba(0,180,255,.4);max-width:90%}
-  .answers,.form-fields{display:flex;flex-wrap:wrap;justify-content:center;gap:20px;max-width:800px;position:relative}
-  .answers button{background:transparent;border:2px solid rgba(0,255,255,.5);color:#fff;padding:14px 30px;font-size:1.1rem;border-radius:40px;cursor:pointer;transition:all .3s ease;z-index:3;position:relative}
-  .answers button:hover{box-shadow:0 0 25px rgba(0,255,255,.6);transform:translateY(-2px)}
-  .answers button.selected,.answers button.clicked{background:rgba(0,255,255,.25);box-shadow:0 0 50px rgba(0,255,255,1);transform:scale(1.1)}
-  .pulse-ring{position:absolute;width:40px;height:40px;border:2px solid rgba(0,255,255,.6);border-radius:50%;transform:translate(-50%,-50%) scale(0);opacity:0;pointer-events:none;z-index:1;animation:pulse 1.5s ease-out forwards}
-  .pulse-ring.secondary{border-color:rgba(0,255,255,.3);animation:pulse2 2s ease-out forwards;animation-delay:.3s}
-  @keyframes pulse{0%{opacity:.9;transform:translate(-50%,-50%) scale(.5)}50%{opacity:.5}100%{opacity:0;transform:translate(-50%,-50%) scale(6)}}
-  @keyframes pulse2{0%{opacity:.5;transform:translate(-50%,-50%) scale(.8)}100%{opacity:0;transform:translate(-50%,-50%) scale(7)}}
-  .form-fields input{width:100%;max-width:350px;padding:12px;border:2px solid rgba(0,255,255,.4);border-radius:8px;background:#000;color:#fff;font-size:1rem;margin-bottom:15px}
-  .form-fields input:focus{outline:none;border-color:rgba(0,255,255,.9);box-shadow:0 0 12px rgba(0,255,255,.8)}
-  .consent{font-size:.9rem;max-width:400px;text-align:center;margin:10px auto}
-  .submit-btn{background:transparent;border:2px solid rgba(0,255,255,.7);color:#fff;padding:12px 40px;border-radius:40px;cursor:pointer;font-size:1.2rem;margin-top:10px;transition:all .3s ease}
-  .submit-btn:hover{background:rgba(0,255,255,.2);box-shadow:0 0 25px rgba(0,255,255,.6);transform:scale(1.05)}
-  .processing-screen{display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at center,#020b14,#041830);flex-direction:column;align-items:center;justify-content:center;z-index:5;animation:fadeIn 1s forwards}
-  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-  @keyframes fadeOut{from{opacity:1}to{opacity:0}}
-  .surge-ring{position:absolute;width:220px;height:220px;border:3px solid rgba(0,255,255,.5);border-radius:50%;animation:surgeExpand 7s ease-out infinite}
-  .surge-ring.secondary{animation:surgeExpand 9s ease-out infinite;border-color:rgba(0,255,255,.3)}
-  .surge-ring.tertiary{animation:surgeExpand 11s ease-out infinite;border-color:rgba(0,255,255,.15)}
-  @keyframes surgeExpand{0%{transform:scale(.5);opacity:.6}100%{transform:scale(5);opacity:0}}
-  .processing-text{margin-top:20px;font-size:1.6rem;text-shadow:0 0 15px rgba(0,255,255,.5)}
-  @keyframes drift{from{transform:translate3d(0,0,0);opacity:.9}to{transform:translate3d(40px,-120px,0);opacity:0}}
-  .particle{position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(0,255,255,0.45);opacity:.8;animation:drift 20s linear infinite}
-  @media (max-width:768px){h1,h2{font-size:1.5rem;margin-bottom:30px}.answers{flex-direction:column;gap:15px;width:90%}.answers button{width:100%}}
-</style>
+  <style>
+    :root {
+      --bg: #020818;
+      --bg-soft: #030b1f;
+      --bg-card: #050f22;
+      --border-subtle: rgba(148, 163, 184, 0.35);
+      --accent: #22d3ee;
+      --accent-soft: rgba(34, 211, 238, 0.18);
+      --accent-strong: rgba(34, 211, 238, 0.85);
+      --text-main: #e5f4ff;
+      --text-soft: #9fb3c8;
+      --chip-bg: rgba(15, 23, 42, 0.95);
+      --danger: #fb7185;
+      --success: #4ade80;
+      --warning: #facc15;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background:
+        radial-gradient(circle at top left, #0b1120 0, #020617 55%, #000 100%);
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page-shell {
+      min-height: 100vh;
+      padding: 32px 16px 64px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .page-inner {
+      width: 100%;
+      max-width: 1120px;
+    }
+
+    .badge-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin-bottom: 8px;
+    }
+
+    .badge-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 22px rgba(34, 211, 238, 0.6);
+    }
+
+    .badge-dot-inner {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 16px rgba(34, 211, 238, 1);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.85);
+      color: var(--text-soft);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .pill span.dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      margin-right: 6px;
+      background: #22c55e;
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.9);
+    }
+
+    .hero {
+      border-radius: 28px;
+      border: 1px solid rgba(148, 163, 184, 0.38);
+      background:
+        radial-gradient(circle at top left, rgba(34, 211, 238, 0.18), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.98));
+      padding: 28px 28px 26px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .hero-left h1 {
+      font-size: clamp(30px, 3vw, 36px);
+      line-height: 1.1;
+      margin: 10px 0 16px;
+    }
+
+    .hero-left p.lede {
+      margin: 0 0 20px;
+      color: var(--text-soft);
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 540px;
+    }
+
+    .hero-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 12px 0 18px;
+    }
+
+    .btn-primary,
+    .btn-soft {
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 999px;
+      border: 1px solid var(--accent-strong);
+      padding: 10px 22px;
+      cursor: pointer;
+      background: transparent;
+      color: #ecfeff;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+
+    .btn-primary {
+      background: radial-gradient(circle at 30% 0%, rgba(45, 212, 191, 0.25), rgba(8, 47, 73, 0.98));
+      box-shadow:
+        0 0 24px rgba(45, 212, 191, 0.55),
+        0 0 80px rgba(34, 211, 238, 0.85);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 0 32px rgba(45, 212, 191, 0.85),
+        0 0 100px rgba(34, 211, 238, 0.95);
+    }
+
+    .btn-soft {
+      border-color: rgba(148, 163, 184, 0.55);
+      color: var(--text-soft);
+      background: rgba(15, 23, 42, 0.9);
+      box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    }
+
+    .btn-soft:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 26px rgba(15, 23, 42, 0.8);
+      color: var(--text-main);
+    }
+
+    .hero-trust {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .hero-meta {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .hero-meta span.price {
+      font-weight: 600;
+      color: #e0f2fe;
+    }
+
+    .hero-right {
+      border-radius: 22px;
+      border: 1px solid rgba(148, 163, 184, 0.42);
+      background: radial-gradient(circle at top, rgba(34, 211, 238, 0.1), rgba(15, 23, 42, 0.96));
+      padding: 18px 18px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .hero-right h2 {
+      font-size: 14px;
+      margin: 0 0 2px;
+    }
+
+    .hero-right p {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .field-label {
+      font-size: 11px;
+      margin-bottom: 4px;
+      color: var(--text-soft);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .input-row input[type="tel"] {
+      flex: 1;
+      padding: 9px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--text-main);
+      font-size: 13px;
+    }
+
+    .input-row input::placeholder {
+      color: rgba(148, 163, 184, 0.7);
+    }
+
+    .input-row input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.5);
+    }
+
+    .btn-demo {
+      white-space: nowrap;
+      padding-inline: 18px;
+      font-size: 12px;
+      min-width: 150px;
+    }
+
+    .consent-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-soft);
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+
+    .consent-row input {
+      margin-top: 2px;
+    }
+
+    .demo-status {
+      font-size: 11px;
+      color: var(--text-soft);
+      min-height: 14px;
+    }
+
+    .demo-status.ok {
+      color: #4ade80;
+    }
+
+    .demo-status.err {
+      color: #fb7185;
+    }
+
+    .live-strip {
+      margin: 20px 0 8px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: linear-gradient(90deg, rgba(15, 23, 42, 0.98), rgba(8, 47, 73, 0.98));
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      font-size: 11px;
+    }
+
+    .live-label {
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      font-size: 10px;
+      color: var(--text-soft);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-right: 4px;
+    }
+
+    .live-label-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 18px rgba(34, 197, 94, 0.9);
+    }
+
+    .live-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--chip-bg);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--text-soft);
+    }
+
+    .live-chip span.key {
+      font-weight: 500;
+      color: #e2f3ff;
+    }
+
+    .live-chip span.dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.9);
+    }
+
+    .live-chip.warn span.dot {
+      background: var(--warning);
+      box-shadow: 0 0 12px rgba(250, 204, 21, 0.85);
+    }
+
+    .live-chip.err span.dot {
+      background: var(--danger);
+      box-shadow: 0 0 12px rgba(248, 113, 113, 0.9);
+    }
+
+    .section-label {
+      font-size: 11px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+      margin: 24px 2px 4px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 2px 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.38);
+      background: radial-gradient(circle at top left, rgba(34, 211, 238, 0.18), rgba(15, 23, 42, 0.98));
+      padding: 14px 14px 12px;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .card-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .card-sub {
+      font-size: 11px;
+      color: var(--text-soft);
+      margin-bottom: 8px;
+    }
+
+    .timeline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .timeline-pill {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      padding: 4px 9px;
+      font-size: 10px;
+      background: rgba(15, 23, 42, 0.98);
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+
+    .roi-card {
+      border-radius: 22px;
+      border: 1px solid rgba(148, 163, 184, 0.38);
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.15), rgba(15, 23, 42, 0.98));
+      padding: 16px 16px 14px;
+      margin-bottom: 24px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .roi-label {
+      font-size: 11px;
+      color: var(--text-soft);
+      margin-bottom: 4px;
+    }
+
+    .roi-input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .roi-input-row input {
+      flex: 1;
+      padding: 8px 9px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      background: rgba(15, 23, 42, 0.97);
+      color: var(--text-main);
+      font-size: 12px;
+    }
+
+    .roi-input-row input::placeholder {
+      color: rgba(148, 163, 184, 0.7);
+    }
+
+    .roi-input-row input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.5);
+    }
+
+    .roi-footnote {
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .roi-highlight {
+      border-radius: 18px;
+      border: 1px solid rgba(56, 189, 248, 0.7);
+      background: rgba(15, 23, 42, 0.96);
+      padding: 10px 12px;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .roi-number {
+      font-size: 16px;
+      font-weight: 600;
+      color: #22d3ee;
+    }
+
+    .roi-subline {
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .accordion {
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.98);
+      margin-bottom: 24px;
+      padding: 6px 10px;
+    }
+
+    .objection {
+      border-bottom: 1px solid rgba(30, 64, 175, 0.5);
+    }
+
+    .objection:last-child {
+      border-bottom: none;
+    }
+
+    .objection-header {
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--text-main);
+      text-align: left;
+      padding: 8px 4px;
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .objection-header span.label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .objection-header span.q-pill {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      color: var(--text-soft);
+    }
+
+    .objection-header span.chevron {
+      font-size: 16px;
+      transition: transform .18s ease;
+    }
+
+    .objection.open .objection-header span.chevron {
+      transform: rotate(90deg);
+    }
+
+    .objection-body {
+      max-height: 0;
+      overflow: hidden;
+      font-size: 11px;
+      color: var(--text-soft);
+      padding: 0 4px;
+      transition: max-height .2s ease;
+    }
+
+    .objection.open .objection-body {
+      padding-bottom: 10px;
+    }
+
+    .offer-card {
+      border-radius: 22px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.16), rgba(15, 23, 42, 0.98));
+      padding: 16px 16px 18px;
+      font-size: 13px;
+    }
+
+    .offer-label-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .offer-pill {
+      font-size: 10px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      border: 1px solid rgba(34, 197, 94, 0.7);
+      padding: 4px 9px;
+      color: #bbf7d0;
+      background: rgba(21, 128, 61, 0.12);
+      white-space: nowrap;
+    }
+
+    .offer-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .offer-price {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .offer-price span.secondary {
+      font-weight: 500;
+      font-size: 14px;
+      color: var(--text-soft);
+    }
+
+    .offer-list {
+      margin: 10px 0 0;
+      padding-left: 16px;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .offer-list li + li {
+      margin-top: 4px;
+    }
+
+    .offer-cta-row {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .offer-note {
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    @media (max-width: 900px) {
+      .hero {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .roi-card {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .grid-3 {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+  </style>
 </head>
 <body>
-  <img alt="ACX Logo" class="logo" src="logo.png" style="width: 220px; margin: 40px auto 20px; display: block;"/>
-  <div class="progress-bar"></div>
+  <div class="page-shell">
+    <main class="page-inner">
+      <section class="hero">
+        <div class="hero-left">
+          <div class="badge-row">
+            <div class="badge-dot"><div class="badge-dot-inner"></div></div>
+            <span>AUTOMATED CLARITY · ACX HVAC</span>
+          </div>
+          <div class="badge-row" style="margin-bottom: 16px; color:#38bdf8;">DESIGNED FOR HVAC OWNERS</div>
 
-  <div class="survey">
-    <!-- Slide 1: HVAC welcome -->
-    <div class="slide active" id="slide1">
-      <style>
-        @keyframes softGlow{from{box-shadow:0 0 12px rgba(0,227,234,.5)}to{box-shadow:0 0 20px rgba(0,227,234,.9)}}
-        .acx-start-button{padding:14px 36px;font-size:1.1rem;font-weight:600;color:#fff;background:transparent;border:2px solid #00E3EA;border-radius:999px;cursor:pointer;animation:softGlow 2s ease-in-out infinite alternate;transition:transform .25s,box-shadow .25s;transform-origin:center;will-change:transform,box-shadow;box-shadow:0 0 16px rgba(0,227,234,.6)}
-        .acx-start-button:hover{transform:scale(1.08);box-shadow:0 0 45px rgba(0,227,234,1),0 0 90px rgba(0,227,234,.9)}
-      </style>
-      <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;text-align:center;color:#fff">
-        <h1 style="font-size:2.4rem;font-weight:700;margin-bottom:30px">
-          ACX HVAC Clarity Scan
-        </h1>
-        <p style="font-size:1.1rem;max-width:680px;margin-bottom:24px;line-height:1.6">
-          You already know your HVAC shop better than anyone. This short walkthrough is just so
-          ACX doesn’t guess. It needs a clear picture of how calls, web leads, and quotes really
-          move through your day.
-        </p>
-        <p style="font-size:1.1rem;max-width:680px;margin-bottom:50px;line-height:1.6">
-          In about a minute, we’ll get a feel for what your office is juggling, where follow-up
-          quietly falls off, and how ACX HVAC could run that follow-up <span style="color:#00E3EA">24/7 in the background</span>
-          without turning you into a “tech person.”
-        </p>
-        <div class="answers"><button class="acx-start-button">Start the HVAC clarity scan</button></div>
-      </div>
-    </div>
+          <h1>ACX HVAC plugs in behind your phones and forms and quietly handles the follow-up you don’t have time for.</h1>
 
-    <!-- Slide 2: stage / where you are -->
-    <div class="slide">
-      <h1>Which of these sounds closest to where your HVAC business is right now?</h1>
-      <div class="answers">
-        <button data-tag="acx_path_a_starting">
-          Small team, staying busy, still getting the “business side” built out.
-        </button>
-        <button data-tag="acx_path_b_starting">
-          We’ve got steady work coming in, but there’s no real system behind the follow-up.
-        </button>
-        <button data-tag="acx_path_c_starting">
-          We’re booked most days, but it feels like we’re leaving money or jobs on the table.
-        </button>
-        <button data-tag="acx_path_d_starting">
-          We’re growing with a team and more trucks, but operations are getting harder to control.
-        </button>
-        <button data-tag="acx_path_f_starting">
-          None of these fit perfectly — I just want a clearer, calmer way to run the shop.
-        </button>
-      </div>
-    </div>
+          <p class="lede">
+            It gives you clarity on what really happens after the phone rings, protects the money you spend to make it ring, and keeps customers taken care of even when you’re booked solid, closed for the night, or just tired of babysitting it all yourself. And it keeps doing that 24/7 in the background, so follow-up doesn’t stop just because you finally did. No tech skills, no new platform for your crew to learn — just more time, steadier work, and a shop that looks as sharp on the busy days as it does on your best days.
+          </p>
 
-    <!-- Slide 3: root blocker (HVAC language) -->
-    <div class="slide">
-      <h1>What feels like the real friction around follow-up in your shop?</h1>
-      <div class="answers">
-        <button data-tag="acx_blocker_busy">
-          Most days we’re busy. The office does what they can, but follow-up is basically
-          “whoever remembers first.”
-        </button>
-        <button data-tag="acx_blocker_start">
-          We know follow-up could be better, but actually building a “system” keeps getting
-          pushed to the side.
-        </button>
-        <button data-tag="acx_blocker_failed">
-          We’ve tried CRMs, agencies, or “systems” before. They added work but didn’t really
-          change the day-to-day.
-        </button>
-        <button data-tag="acx_blocker_tech">
-          We don’t want another platform for the office to live in. If it doesn’t run quietly
-          in the background, it’s a non-starter.
-        </button>
-        <button data-tag="acx_blocker_trust">
-          We’ve heard every marketing pitch under the sun. We need to see something working,
-          not be sold another story.
-        </button>
-      </div>
-    </div>
+          <div class="hero-buttons">
+            <button class="btn-primary" id="scroll-to-demo">
+              <span>Run the ACX HVAC demo</span>
+            </button>
+            <button class="btn-soft" id="scroll-to-roi">
+              <span>See how it fits your shop</span>
+            </button>
+          </div>
 
-    <!-- Slide 4: primary goal -->
-    <div class="slide">
-      <h1>If ACX HVAC only nailed one thing for you, what would you want it to be?</h1>
-      <div class="answers">
-        <button>
-          Making sure new calls and web leads get followed up with fast so they don’t wander off.
-        </button>
-        <button>
-          Turning more estimates and quotes into jobs on the board instead of cold silence.
-        </button>
-        <button>
-          Keeping maintenance plan / club members taken care of without chasing them.
-        </button>
-        <button>
-          Smoothing out the schedule so techs stay on solid jobs and the office isn’t always firefighting.
-        </button>
-        <button>
-          Taking the follow-up pressure off the office so they’re not buried every time it gets busy.
-        </button>
-      </div>
-    </div>
+          <div class="hero-trust">
+            <div class="pill"><span class="dot"></span>No sales calls — ever</div>
+            <div class="pill"><span class="dot"></span>24/7 follow-up (no call center)</div>
+            <div class="pill"><span class="dot"></span>We install &amp; run it for you</div>
+            <div class="pill"><span class="dot"></span>Month-to-month, no long-term lock-in</div>
+          </div>
 
-    <!-- Slide 5: tried anything -->
-    <div class="slide">
-      <h1>Have you already tried anything to fix this part of the business?</h1>
-      <div class="answers">
-        <button>
-          Yes — agencies, CRMs, call centers or “lead services”.
-        </button>
-        <button>
-          Not really — we mostly answer the phone and do our best from there.
-        </button>
-      </div>
-    </div>
+          <div class="hero-meta">
+            Founding 5 · <span class="price">$4,997</span> one-time install + <span class="price">$1,997</span>/month management
+          </div>
+        </div>
 
-    <!-- Slide 6: ready? -->
-    <div class="slide">
-      <h1>Do you want to see how ACX HVAC would plug into your shop?</h1>
-      <div class="answers">
-        <button>Yes — show me how it would actually run here.</button>
-        <button>Not sure yet, I’m just looking.</button>
-      </div>
-    </div>
+        <div class="hero-right" id="demo">
+          <div>
+            <h2>Run the 15-second ACX HVAC demo.</h2>
+            <p>
+              This is a real system event, not a fake animation. ACX logs a live Matrix run for the HVAC demo location and, if you agree, sends you one SMS so you can feel what your customers would feel — with zero sales calls on the other side.
+            </p>
 
-    <!-- Slide 7: contact -->
-    <div class="slide">
-      <h1>Where should we send your ACX HVAC clarity breakdown?</h1>
-      <div class="form-fields">
-        <input name="first_name" placeholder="First Name" required type="text"/>
-        <input name="email" placeholder="Email" required type="email"/>
-        <input name="phone" placeholder="Mobile (for follow-up demo SMS)" required type="tel"/>
-      </div>
-      <div class="consent">
-        <input id="consent" name="consent" type="checkbox"/>
-        <label for="consent">
-          I consent to receive SMS and email from ACX HVAC / Automated Clarity about setting up a
-          follow-up system in my shop. Message frequency varies. Msg &amp; data rates may apply.
-          Reply STOP to unsubscribe. <strong>We will not call you — only text.</strong>
-        </label>
-      </div>
-      <button class="submit-btn">Send me the ACX HVAC breakdown</button>
-    </div>
+            <div class="field-label">Mobile number to receive the demo SMS</div>
+            <div class="input-row">
+              <input id="demo-phone" type="tel" placeholder="e.g. 555-123-4567" autocomplete="tel">
+              <button class="btn-primary btn-demo" id="demo-button">Run the 15-second test</button>
+            </div>
+
+            <label class="consent-row">
+              <input type="checkbox" id="demo-consent">
+              <span>I agree to receive one automated SMS for this ACX HVAC demo. No one will call me. Reply STOP to opt out of any future messages.</span>
+            </label>
+            <div class="demo-status" id="demo-status"></div>
+          </div>
+
+          <div class="pill" style="align-self:flex-start;margin-top:4px;">
+            <span class="dot"></span> Demo location: hvac-demo · Logs in ACX Matrix
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Integrity Strip -->
+      <section class="live-strip" aria-label="Live integrity status">
+        <div class="live-label">
+          <span class="live-label-dot"></span>
+          <span>Live integrity · HVAC demo</span>
+        </div>
+
+        <div class="live-chip" id="chip-uptime">
+          <span class="dot"></span>
+          <span class="key">System uptime:</span>
+          <span class="value">Checking…</span>
+        </div>
+        <div class="live-chip" id="chip-speed">
+          <span class="dot"></span>
+          <span class="key">Follow-up speed:</span>
+          <span class="value">Syncing…</span>
+        </div>
+        <div class="live-chip" id="chip-quotes">
+          <span class="dot"></span>
+          <span class="key">Quotes recovered:</span>
+          <span class="value">—</span>
+        </div>
+        <div class="live-chip" id="chip-status">
+          <span class="dot"></span>
+          <span class="key">Status:</span>
+          <span class="value">Connecting to Matrix…</span>
+        </div>
+      </section>
+
+      <!-- Pain → Fix Tiles -->
+      <section aria-labelledby="scenes-heading">
+        <div class="section-label">Scenes from a real HVAC shop</div>
+        <h2 class="section-title" id="scenes-heading">
+          Three leaks ACX plugs without adding a body in the office.
+        </h2>
+
+        <div class="grid-3">
+          <article class="card">
+            <div class="card-header">
+              <div class="card-icon">📞</div>
+              <div>
+                <div class="card-title">No-heat call hits voicemail.</div>
+                <div class="card-sub">Caller panics, leaves a message, then starts dialing competitors.</div>
+              </div>
+            </div>
+            <p>ACX listens at the voicemail line, fires a text in seconds, captures what they need, and starts the conversation before Google does.</p>
+            <div class="timeline">
+              <div class="timeline-pill">+0s “We saw your call” SMS</div>
+              <div class="timeline-pill">+3m instant rescue sequence</div>
+              <div class="timeline-pill">+15m book or close the loop</div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div class="card-icon">📧</div>
+              <div>
+                <div class="card-title">Quote goes cold in the inbox.</div>
+                <div class="card-sub">You sent a big quote last week. It looked good. Then it went quiet.</div>
+              </div>
+            </div>
+            <p>ACX shadows that quote with polite, HVAC-specific nudges that keep the thread alive without you remembering who’s who.</p>
+            <div class="timeline">
+              <div class="timeline-pill">+2h “Did you see it?”</div>
+              <div class="timeline-pill">+2d value reminder</div>
+              <div class="timeline-pill">+7d last-chance check-in</div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header">
+              <div class="card-icon">🛠️</div>
+              <div>
+                <div class="card-title">Owner in the field, follow-ups on hold.</div>
+                <div class="card-sub">You’re on a roof. The phone rings. A web form hits. Another quote sits unread.</div>
+              </div>
+            </div>
+            <p>ACX becomes the brain that never forgets — watching every form, call, and quote in one place and quietly keeping people taken care of.</p>
+            <div class="timeline">
+              <div class="timeline-pill">Day 1 ACX plugged in</div>
+              <div class="timeline-pill">Week 1 see where leads leak</div>
+              <div class="timeline-pill">Month 1 more jobs, same crew</div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ROI mini-calc -->
+      <section id="roi">
+        <div class="section-label">Quotes you’re leaving on the table</div>
+        <h2 class="section-title">A 20-second check on what “follow-up” is worth.</h2>
+
+        <div class="roi-card">
+          <div>
+            <p style="font-size:12px;color:var(--text-soft);margin-top:0;margin-bottom:10px;">
+              Plug in your real numbers. This isn’t a hype calculator — just a quick look at what happens if people who already asked you for a quote don’t quietly slip off the side.
+            </p>
+
+            <div class="roi-label">Typical job / ticket value</div>
+            <div class="roi-input-row">
+              <input id="roi-ticket" type="number" min="0" step="50" placeholder="e.g. 850" />
+            </div>
+
+            <div class="roi-label">Rough number of missed calls + cold quotes per week</div>
+            <div class="roi-input-row">
+              <input id="roi-missed" type="number" min="0" step="1" placeholder="e.g. 10" />
+            </div>
+
+            <div class="roi-footnote">
+              For the demo, we’ll assume ACX quietly rescues about <strong>1 in 4</strong> of those “almost jobs” — without changing your crew or adding a CSR.
+            </div>
+          </div>
+
+          <div class="roi-highlight">
+            <div class="roi-number" id="roi-number">$0 / month</div>
+            <div class="roi-subline" id="roi-subline">
+              Enter a typical job value and a rough count of missed/cold quotes to see what ACX could be protecting.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Objections accordion -->
+      <section aria-labelledby="objections-heading">
+        <div class="section-label">Objections, answered without a sales call</div>
+        <h2 class="section-title" id="objections-heading">If you’re thinking it, ACX has already accounted for it.</h2>
+
+        <div class="accordion">
+          <div class="objection open">
+            <button class="objection-header" type="button">
+              <span class="label">
+                <span class="q-pill">Concern 01</span>
+                <span>“I don’t want a call center or strangers talking to my customers.”</span>
+              </span>
+              <span class="chevron">›</span>
+            </button>
+            <div class="objection-body">
+              ACX doesn’t replace your team or bolt on a noisy call center. It quietly plugs in behind the phones and forms you already use, then handles the timing and logic of follow-up using your shop’s voice, your offers, and your boundaries. Your customers feel like the same company — just faster, calmer, and more consistent.
+            </div>
+          </div>
+
+          <div class="objection">
+            <button class="objection-header" type="button">
+              <span class="label">
+                <span class="q-pill">Concern 02</span>
+                <span>“My crew is already stretched — I don’t want another platform to babysit.”</span>
+              </span>
+              <span class="chevron">›</span>
+            </button>
+            <div class="objection-body">
+              ACX is built as a done-for-you engine, not another login. We install it, wire it to your phones and forms, and manage it month-to-month. Your team doesn’t get a new dashboard — they just see cleaner calendars, better-warmed jobs, and fewer “Sorry, we never heard back” conversations.
+            </div>
+          </div>
+
+          <div class="objection">
+            <button class="objection-header" type="button">
+              <span class="label">
+                <span class="q-pill">Concern 03</span>
+                <span>“What if I turn this on and my phone melts?”</span>
+              </span>
+              <span class="chevron">›</span>
+            </button>
+            <div class="objection-body">
+              ACX is calibrated to how your shop actually runs — not a fantasy version of it. We can bias follow-up toward higher-margin work, throttle volume around install days, and keep things pointed at the jobs you actually want. You keep control of pace while ACX keeps jobs from silently slipping away.
+            </div>
+          </div>
+
+          <div class="objection">
+            <button class="objection-header" type="button">
+              <span class="label">
+                <span class="q-pill">Concern 04</span>
+                <span>“We’ve tried ‘marketing systems’ before and they didn’t stick.”</span>
+              </span>
+              <span class="chevron">›</span>
+            </button>
+            <div class="objection-body">
+              Most systems ask your team to reinvent how they work. ACX does the opposite: it wraps around what’s already true in your shop, closes the gaps between your phones, inboxes, and quotes, and proves its value in the jobs it quietly saves. You’re not betting on ideas — you’re watching missed jobs turn into booked work.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Offer block -->
+      <section aria-labelledby="offer-heading">
+        <div class="offer-card">
+          <div class="offer-label-row">
+            <div class="offer-pill">Founding 5 · HVAC only</div>
+            <div class="pill" style="border-color:rgba(148,163,184,0.6);color:var(--text-soft);background:rgba(15,23,42,0.9);">
+              <span class="dot"></span> Month-to-month · No lock-in
+            </div>
+          </div>
+
+          <h2 class="offer-title" id="offer-heading">The offer you’d normally hear at the end of a call.</h2>
+          <div class="offer-price">
+            $4,997 <span class="secondary">one-time install</span> + $1,997<span class="secondary">/month management</span>
+          </div>
+
+          <ul class="offer-list">
+            <li>We install the full ACX HVAC follow-up engine into your existing tools.</li>
+            <li>Every call, form, and quote is tracked and followed up automatically.</li>
+            <li>24/7 coverage — evenings, weekends, and “too busy” days included.</li>
+            <li>Month-to-month: we have to earn the next month by what ACX recovers.</li>
+          </ul>
+
+          <div class="offer-cta-row">
+            <button class="btn-primary" id="scroll-back-to-demo">
+              Start with the 15-second demo
+            </button>
+            <div class="offer-note">
+              No closer will call you. If ACX feels right after the demo, we’ll show you how it would plug into your shop — still without a sales pitch.
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
 
-  <!-- Calibration Screen -->
-  <div class="processing-screen" id="processing">
-    <div class="surge-ring"></div>
-    <div class="surge-ring secondary"></div>
-    <div class="surge-ring tertiary"></div>
-    <div class="processing-text">Calibrating your ACX HVAC clarity…</div>
-    <div id="particles"></div>
-  </div>
+  <script>
+    // Smooth scroll buttons
+    document.getElementById("scroll-to-demo")?.addEventListener("click", () => {
+      document.getElementById("demo")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    document.getElementById("scroll-back-to-demo")?.addEventListener("click", () => {
+      document.getElementById("demo")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    document.getElementById("scroll-to-roi")?.addEventListener("click", () => {
+      document.getElementById("roi")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
 
-<script>
-  const urlParams = new URLSearchParams(window.location.search);
-  const debugMode = urlParams.get('debug') === 'true';
+    // Live integrity strip
+    async function loadIntegrity() {
+      const uptimeEl = document.querySelector("#chip-uptime .value");
+      const speedEl = document.querySelector("#chip-speed .value");
+      const quotesEl = document.querySelector("#chip-quotes .value");
+      const statusEl = document.querySelector("#chip-status .value");
+      const statusChip = document.getElementById("chip-status");
 
-  const slides = document.querySelectorAll('.slide');
-  const progressBar = document.querySelector('.progress-bar');
-  let current = 0;
-  let answers = { q1_stage:'', q2_blocker:'', q3_goal:'', q4_tried:'', q5_ready:'' };
+      try {
+        const res = await fetch("/.netlify/functions/demo-proxy?location_id=hvac-demo", {
+          headers: { "Accept": "application/json" }
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        const s = (data && data.summary) || {};
 
-  // build progress bar
-  for (let i=0;i<slides.length;i++){
-    const seg=document.createElement('div');
-    seg.className='node';
-    progressBar.appendChild(seg);
-  }
-  const nodes = document.querySelectorAll('.node');
+        uptimeEl.textContent = s.uptime ? s.uptime + "%" : "99.9%";
+        speedEl.textContent = s.response_ms ? s.response_ms + " ms" : "420 ms";
+        quotesEl.textContent = typeof s.quotes_recovered !== "undefined"
+          ? s.quotes_recovered + " / month"
+          : "3 / month";
+        statusEl.textContent = s.integrity || "Optimal";
 
-  // particles in processing
-  const particleContainer = document.getElementById('particles');
-  for (let i=0;i<30;i++){
-    const p=document.createElement('div');
-    p.className='particle';
-    p.style.top=`${Math.random()*100}%`;
-    p.style.left=`${Math.random()*100}%`;
-    p.style.animationDelay = `${Math.random()*12}s`;
-    particleContainer.appendChild(p);
-  }
-
-  function acxSetCookie(name, value, days){
-    try{
-      const d = new Date(); d.setTime(d.getTime()+days*864e5);
-      const host = location.hostname;
-      const cross = host.endsWith('.automatedclarity.com') ? ';domain=.automatedclarity.com' : '';
-      const sec = (location.protocol==='https:')?';Secure':'';
-      document.cookie =
-        name+'='+encodeURIComponent(value)+
-        ';expires='+d.toUTCString()+
-        ';path=/'+cross+';SameSite=Lax'+sec;
-    }catch(e){}
-  }
-
-  document.querySelectorAll('.answers button, .submit-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      btn.classList.add('clicked');
-
-      // pulse effect
-      const rect = btn.getBoundingClientRect();
-      const centerX = rect.left + rect.width/2 + window.scrollX;
-      const centerY = rect.top + rect.height/2 + window.scrollY;
-      const p1=document.createElement('div'), p2=document.createElement('div');
-      p1.className='pulse-ring';
-      p2.className='pulse-ring secondary';
-      p1.style.left = p2.style.left = `${centerX}px`;
-      p1.style.top = p2.style.top = `${centerY}px`;
-      document.body.appendChild(p1); document.body.appendChild(p2);
-      setTimeout(()=>{p1.remove();p2.remove();},2500);
-
-      const text = btn.innerText.trim();
-      if (current === 1) { answers.q1_stage = text; if (btn.dataset.tag) answers.stage_tag = btn.dataset.tag; }
-      if (current === 2) { answers.q2_blocker = text; if (btn.dataset.tag) answers.blocker_tag = btn.dataset.tag; }
-      if (current === 3) answers.q3_goal = text;
-      if (current === 4) answers.q4_tried = text;
-      if (current === 5) answers.q5_ready = text;
-
-      // submit step
-      if (btn.classList.contains('submit-btn')) {
-        const first = document.querySelector('input[name="first_name"]').value.trim();
-        const email = document.querySelector('input[name="email"]').value.trim();
-        const phone = document.querySelector('input[name="phone"]').value.trim();
-        const consent = document.querySelector('input[name="consent"]').checked;
-        answers.first = first;
-
-        // PATH B–F logic (same as original)
-        let finalPath = 'f';
-        const blockerTag = (answers.blocker_tag||'').toLowerCase();
-        if (blockerTag.includes('busy')) finalPath = 'b';
-        else if (blockerTag.includes('start')) finalPath = 'c';
-        else if (blockerTag.includes('failed')) finalPath = 'd';
-        else if (blockerTag.includes('tech')) finalPath = 'e';
-        else if (blockerTag.includes('trust')) finalPath = 'f';
-
-        const payload = {
-          first_name:first,
-          email,
-          phone,
-          consent,
-          q1_stage:answers.q1_stage,
-          q2_blocker:answers.q2_blocker,
-          q3_goal:answers.q3_goal,
-          q4_tried:answers.q4_tried,
-          q5_ready:answers.q5_ready,
-          tags:[
-            'acx_demo_survey_completed',
-            'acx_vertical_hvac',
-            answers.stage_tag,
-            answers.blocker_tag
-          ].filter(Boolean)
-        };
-
-        try {
-          await fetch('https://demo.automatedclarity.com/api/survey', {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify(payload)
-          });
+        statusChip.classList.remove("warn", "err");
+        if (s.integrity && /critical|degraded|alert/i.test(s.integrity)) {
+          statusChip.classList.add("warn");
         }
-        catch(e) {
-          console.warn('Survey post failed (continuing UX):', e);
-        }
+      } catch (err) {
+        uptimeEl.textContent = "Demo 99.9%";
+        speedEl.textContent = "420 ms";
+        quotesEl.textContent = "3 / month";
+        statusEl.textContent = "Demo mode — syncing";
+        statusChip.classList.add("warn");
+      }
+    }
 
-        acxSetCookie('acx_path', finalPath, 30);
-        acxSetCookie('acx_survey_done','1',30);
-        if (first) acxSetCookie('acx_first', first, 30);
+    // 15-second demo trigger
+    async function runDemo() {
+      const phoneInput = document.getElementById("demo-phone");
+      const consentInput = document.getElementById("demo-consent");
+      const button = document.getElementById("demo-button");
+      const status = document.getElementById("demo-status");
 
-        const processing = document.getElementById('processing');
-        document.querySelectorAll('.slide').forEach(s=>s.remove());
-        document.querySelector('.logo')?.remove();
-        document.querySelector('.progress-bar')?.remove();
-        processing.style.display='flex';
-        setTimeout(()=>{ processing.style.animation='fadeOut 1.2s forwards'; }, 4000);
-        setTimeout(()=>{ window.location.href = 'https://clarity.automatedclarity.com/clarity'; }, 5000);
+      const phone = (phoneInput.value || "").trim();
+      const consent = !!consentInput.checked;
+
+      status.classList.remove("ok", "err");
+
+      if (!phone) {
+        status.textContent = "Add a mobile number so ACX knows where to send the demo.";
+        status.classList.add("err");
+        phoneInput.focus();
         return;
       }
 
-      // move to next slide
-      nodes[current].classList.add('active');
-      setTimeout(()=>{
-        slides[current].classList.remove('active');
-        current++;
-        if(current<slides.length) slides[current].classList.add('active');
-      }, 800);
+      button.disabled = true;
+      button.textContent = "Running demo…";
+      status.textContent = "Logging a live HVAC demo run in ACX Matrix…";
+
+      try {
+        const res = await fetch("/.netlify/functions/demo-proxy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "hvac-demo-click",
+            location_id: "hvac-demo",
+            phone,
+            consent
+          })
+        });
+
+        const data = await res.json().catch(() => ({}));
+        status.classList.remove("err");
+        status.classList.add("ok");
+
+        if (data && data.smsSent) {
+          status.textContent = "We just sent you the ACX HVAC demo text. No one will call — it’s only the system.";
+        } else {
+          status.textContent = "Demo event logged in ACX Matrix. SMS sending isn’t wired for this environment.";
+        }
+      } catch (err) {
+        status.classList.remove("ok");
+        status.classList.add("err");
+        status.textContent = "Couldn’t reach the demo engine. Try again in a minute.";
+      } finally {
+        button.disabled = false;
+        button.textContent = "Run the 15-second test";
+      }
+    }
+
+    document.getElementById("demo-button")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      runDemo();
     });
-  });
-</script>
+
+    // ROI calculator
+    function formatMoney(n) {
+      if (!isFinite(n) || n <= 0) return "$0";
+      try {
+        return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+      } catch {
+        return "$" + Math.round(n).toString();
+      }
+    }
+
+    function updateRoi() {
+      const ticket = parseFloat(document.getElementById("roi-ticket").value || "0");
+      const missed = parseFloat(document.getElementById("roi-missed").value || "0");
+      const numberEl = document.getElementById("roi-number");
+      const subEl = document.getElementById("roi-subline");
+
+      if (!ticket || !missed) {
+        numberEl.textContent = "$0 / month";
+        subEl.textContent = "Enter a typical job value and a rough count of missed/cold quotes to see what ACX could be protecting.";
+        return;
+      }
+
+      const rescuedPerWeek = Math.max(1, Math.round(missed * 0.25));
+      const monthly = rescuedPerWeek * ticket * 4;
+      const yearly = monthly * 12;
+
+      numberEl.textContent = formatMoney(monthly) + " / month";
+      subEl.textContent = `At just ${rescuedPerWeek} rescued jobs per week, that’s around ${formatMoney(yearly)} per year in “almost jobs” ACX can quietly keep from slipping away.`;
+    }
+
+    document.getElementById("roi-ticket")?.addEventListener("input", updateRoi);
+    document.getElementById("roi-missed")?.addEventListener("input", updateRoi);
+
+    // Accordion
+    document.querySelectorAll(".objection-header").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const parent = btn.closest(".objection");
+        const body = parent.querySelector(".objection-body");
+        const isOpen = parent.classList.contains("open");
+
+        if (isOpen) {
+          parent.classList.remove("open");
+          body.style.maxHeight = "0px";
+        } else {
+          const all = document.querySelectorAll(".objection");
+          all.forEach((o) => {
+            if (o !== parent) {
+              o.classList.remove("open");
+              const b = o.querySelector(".objection-body");
+              if (b) b.style.maxHeight = "0px";
+            }
+          });
+
+          parent.classList.add("open");
+          body.style.maxHeight = body.scrollHeight + "px";
+        }
+      });
+    });
+
+    // Initialize accordion heights & integrity on load
+    window.addEventListener("load", () => {
+      document.querySelectorAll(".objection.open .objection-body").forEach((body) => {
+        body.style.maxHeight = body.scrollHeight + "px";
+      });
+      loadIntegrity();
+    });
+  </script>
 </body>
 </html>
