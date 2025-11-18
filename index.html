@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ACX HVAC Clarity Scan</title>
+
+<!-- Env lock removed on purpose so it doesn't bounce you while testing.
+     Re-add later if you want strict domain locking. -->
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+  body{margin:0;padding:0;font-family:'Inter',sans-serif;background:#030B1A;color:#fff;display:flex;flex-direction:column;align-items:center;height:100vh;overflow:hidden;position:relative}
+  img.logo{width:180px;margin-top:20px;z-index:3}
+  .progress-bar{display:flex;justify-content:center;gap:8px;margin-top:20px;z-index:3}
+  .node{width:25px;height:6px;border-radius:3px;background:rgba(0,200,255,0.2);transition:all .4s ease}
+  .node.active{background:rgba(0,255,255,1);box-shadow:0 0 12px rgba(0,255,255,.8)}
+  .survey{flex:1;display:flex;align-items:center;justify-content:center;width:100%;position:relative;overflow:hidden}
+  .slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transform:translateX(50px);transition:opacity .8s ease,transform .8s ease}
+  .slide.active{opacity:1;transform:translateX(0);z-index:2}
+  h1,h2{font-size:2rem;margin-bottom:40px;text-align:center;text-shadow:0 0 20px rgba(0,180,255,.4);max-width:90%}
+  .answers,.form-fields{display:flex;flex-wrap:wrap;justify-content:center;gap:20px;max-width:800px;position:relative}
+  .answers button{background:transparent;border:2px solid rgba(0,255,255,.5);color:#fff;padding:14px 30px;font-size:1.1rem;border-radius:40px;cursor:pointer;transition:all .3s ease;z-index:3;position:relative}
+  .answers button:hover{box-shadow:0 0 25px rgba(0,255,255,.6);transform:translateY(-2px)}
+  .answers button.selected,.answers button.clicked{background:rgba(0,255,255,.25);box-shadow:0 0 50px rgba(0,255,255,1);transform:scale(1.1)}
+  .pulse-ring{position:absolute;width:40px;height:40px;border:2px solid rgba(0,255,255,.6);border-radius:50%;transform:translate(-50%,-50%) scale(0);opacity:0;pointer-events:none;z-index:1;animation:pulse 1.5s ease-out forwards}
+  .pulse-ring.secondary{border-color:rgba(0,255,255,.3);animation:pulse2 2s ease-out forwards;animation-delay:.3s}
+  @keyframes pulse{0%{opacity:.9;transform:translate(-50%,-50%) scale(.5)}50%{opacity:.5}100%{opacity:0;transform:translate(-50%,-50%) scale(6)}}
+  @keyframes pulse2{0%{opacity:.5;transform:translate(-50%,-50%) scale(.8)}100%{opacity:0;transform:translate(-50%,-50%) scale(7)}}
+  .form-fields input{width:100%;max-width:350px;padding:12px;border:2px solid rgba(0,255,255,.4);border-radius:8px;background:#000;color:#fff;font-size:1rem;margin-bottom:15px}
+  .form-fields input:focus{outline:none;border-color:rgba(0,255,255,.9);box-shadow:0 0 12px rgba(0,255,255,.8)}
+  .consent{font-size:.9rem;max-width:400px;text-align:center;margin:10px auto}
+  .submit-btn{background:transparent;border:2px solid rgba(0,255,255,.7);color:#fff;padding:12px 40px;border-radius:40px;cursor:pointer;font-size:1.2rem;margin-top:10px;transition:all .3s ease}
+  .submit-btn:hover{background:rgba(0,255,255,.2);box-shadow:0 0 25px rgba(0,255,255,.6);transform:scale(1.05)}
+  .processing-screen{display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at center,#020b14,#041830);flex-direction:column;align-items:center;justify-content:center;z-index:5;animation:fadeIn 1s forwards}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes fadeOut{from{opacity:1}to{opacity:0}}
+  .surge-ring{position:absolute;width:220px;height:220px;border:3px solid rgba(0,255,255,.5);border-radius:50%;animation:surgeExpand 7s ease-out infinite}
+  .surge-ring.secondary{animation:surgeExpand 9s ease-out infinite;border-color:rgba(0,255,255,.3)}
+  .surge-ring.tertiary{animation:surgeExpand 11s ease-out infinite;border-color:rgba(0,255,255,.15)}
+  @keyframes surgeExpand{0%{transform:scale(.5);opacity:.6}100%{transform:scale(5);opacity:0}}
+  .processing-text{margin-top:20px;font-size:1.6rem;text-shadow:0 0 15px rgba(0,255,255,.5)}
+  @keyframes drift{from{transform:translate3d(0,0,0);opacity:.9}to{transform:translate3d(40px,-120px,0);opacity:0}}
+  .particle{position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(0,255,255,0.45);opacity:.8;animation:drift 20s linear infinite}
+  @media (max-width:768px){h1,h2{font-size:1.5rem;margin-bottom:30px}.answers{flex-direction:column;gap:15px;width:90%}.answers button{width:100%}}
+</style>
+</head>
+<body>
+  <img alt="ACX Logo" class="logo" src="logo.png" style="width: 220px; margin: 40px auto 20px; display: block;"/>
+  <div class="progress-bar"></div>
+
+  <div class="survey">
+    <!-- Slide 1: HVAC welcome -->
+    <div class="slide active" id="slide1">
+      <style>
+        @keyframes softGlow{from{box-shadow:0 0 12px rgba(0,227,234,.5)}to{box-shadow:0 0 20px rgba(0,227,234,.9)}}
+        .acx-start-button{padding:14px 36px;font-size:1.1rem;font-weight:600;color:#fff;background:transparent;border:2px solid #00E3EA;border-radius:999px;cursor:pointer;animation:softGlow 2s ease-in-out infinite alternate;transition:transform .25s,box-shadow .25s;transform-origin:center;will-change:transform,box-shadow;box-shadow:0 0 16px rgba(0,227,234,.6)}
+        .acx-start-button:hover{transform:scale(1.08);box-shadow:0 0 45px rgba(0,227,234,1),0 0 90px rgba(0,227,234,.9)}
+      </style>
+      <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;text-align:center;color:#fff">
+        <h1 style="font-size:2.4rem;font-weight:700;margin-bottom:30px">
+          ACX HVAC Clarity Scan
+        </h1>
+        <p style="font-size:1.1rem;max-width:680px;margin-bottom:24px;line-height:1.6">
+          You already know your HVAC shop better than anyone. This short walkthrough is just so
+          ACX doesn’t guess. It needs a clear picture of how calls, web leads, and quotes really
+          move through your day.
+        </p>
+        <p style="font-size:1.1rem;max-width:680px;margin-bottom:50px;line-height:1.6">
+          In about a minute, we’ll get a feel for what your office is juggling, where follow-up
+          quietly falls off, and how ACX HVAC could run that follow-up <span style="color:#00E3EA">24/7 in the background</span>
+          without turning you into a “tech person.”
+        </p>
+        <div class="answers"><button class="acx-start-button">Start the HVAC clarity scan</button></div>
+      </div>
+    </div>
+
+    <!-- Slide 2: stage / where you are -->
+    <div class="slide">
+      <h1>Which of these sounds closest to where your HVAC business is right now?</h1>
+      <div class="answers">
+        <button data-tag="acx_path_a_starting">
+          Small team, staying busy, still getting the “business side” built out.
+        </button>
+        <button data-tag="acx_path_b_starting">
+          We’ve got steady work coming in, but there’s no real system behind the follow-up.
+        </button>
+        <button data-tag="acx_path_c_starting">
+          We’re booked most days, but it feels like we’re leaving money or jobs on the table.
+        </button>
+        <button data-tag="acx_path_d_starting">
+          We’re growing with a team and more trucks, but operations are getting harder to control.
+        </button>
+        <button data-tag="acx_path_f_starting">
+          None of these fit perfectly — I just want a clearer, calmer way to run the shop.
+        </button>
+      </div>
+    </div>
+
+    <!-- Slide 3: root blocker (HVAC language) -->
+    <div class="slide">
+      <h1>What feels like the real friction around follow-up in your shop?</h1>
+      <div class="answers">
+        <button data-tag="acx_blocker_busy">
+          Most days we’re busy. The office does what they can, but follow-up is basically
+          “whoever remembers first.”
+        </button>
+        <button data-tag="acx_blocker_start">
+          We know follow-up could be better, but actually building a “system” keeps getting
+          pushed to the side.
+        </button>
+        <button data-tag="acx_blocker_failed">
+          We’ve tried CRMs, agencies, or “systems” before. They added work but didn’t really
+          change the day-to-day.
+        </button>
+        <button data-tag="acx_blocker_tech">
+          We don’t want another platform for the office to live in. If it doesn’t run quietly
+          in the background, it’s a non-starter.
+        </button>
+        <button data-tag="acx_blocker_trust">
+          We’ve heard every marketing pitch under the sun. We need to see something working,
+          not be sold another story.
+        </button>
+      </div>
+    </div>
+
+    <!-- Slide 4: primary goal -->
+    <div class="slide">
+      <h1>If ACX HVAC only nailed one thing for you, what would you want it to be?</h1>
+      <div class="answers">
+        <button>
+          Making sure new calls and web leads get followed up with fast so they don’t wander off.
+        </button>
+        <button>
+          Turning more estimates and quotes into jobs on the board instead of cold silence.
+        </button>
+        <button>
+          Keeping maintenance plan / club members taken care of without chasing them.
+        </button>
+        <button>
+          Smoothing out the schedule so techs stay on solid jobs and the office isn’t always firefighting.
+        </button>
+        <button>
+          Taking the follow-up pressure off the office so they’re not buried every time it gets busy.
+        </button>
+      </div>
+    </div>
+
+    <!-- Slide 5: tried anything -->
+    <div class="slide">
+      <h1>Have you already tried anything to fix this part of the business?</h1>
+      <div class="answers">
+        <button>
+          Yes — agencies, CRMs, call centers or “lead services”.
+        </button>
+        <button>
+          Not really — we mostly answer the phone and do our best from there.
+        </button>
+      </div>
+    </div>
+
+    <!-- Slide 6: ready? -->
+    <div class="slide">
+      <h1>Do you want to see how ACX HVAC would plug into your shop?</h1>
+      <div class="answers">
+        <button>Yes — show me how it would actually run here.</button>
+        <button>Not sure yet, I’m just looking.</button>
+      </div>
+    </div>
+
+    <!-- Slide 7: contact -->
+    <div class="slide">
+      <h1>Where should we send your ACX HVAC clarity breakdown?</h1>
+      <div class="form-fields">
+        <input name="first_name" placeholder="First Name" required type="text"/>
+        <input name="email" placeholder="Email" required type="email"/>
+        <input name="phone" placeholder="Mobile (for follow-up demo SMS)" required type="tel"/>
+      </div>
+      <div class="consent">
+        <input id="consent" name="consent" type="checkbox"/>
+        <label for="consent">
+          I consent to receive SMS and email from ACX HVAC / Automated Clarity about setting up a
+          follow-up system in my shop. Message frequency varies. Msg &amp; data rates may apply.
+          Reply STOP to unsubscribe. <strong>We will not call you — only text.</strong>
+        </label>
+      </div>
+      <button class="submit-btn">Send me the ACX HVAC breakdown</button>
+    </div>
+  </div>
+
+  <!-- Calibration Screen -->
+  <div class="processing-screen" id="processing">
+    <div class="surge-ring"></div>
+    <div class="surge-ring secondary"></div>
+    <div class="surge-ring tertiary"></div>
+    <div class="processing-text">Calibrating your ACX HVAC clarity…</div>
+    <div id="particles"></div>
+  </div>
+
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const debugMode = urlParams.get('debug') === 'true';
+
+  const slides = document.querySelectorAll('.slide');
+  const progressBar = document.querySelector('.progress-bar');
+  let current = 0;
+  let answers = { q1_stage:'', q2_blocker:'', q3_goal:'', q4_tried:'', q5_ready:'' };
+
+  // build progress bar
+  for (let i=0;i<slides.length;i++){
+    const seg=document.createElement('div');
+    seg.className='node';
+    progressBar.appendChild(seg);
+  }
+  const nodes = document.querySelectorAll('.node');
+
+  // particles in processing
+  const particleContainer = document.getElementById('particles');
+  for (let i=0;i<30;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    p.style.top=`${Math.random()*100}%`;
+    p.style.left=`${Math.random()*100}%`;
+    p.style.animationDelay = `${Math.random()*12}s`;
+    particleContainer.appendChild(p);
+  }
+
+  function acxSetCookie(name, value, days){
+    try{
+      const d = new Date(); d.setTime(d.getTime()+days*864e5);
+      const host = location.hostname;
+      const cross = host.endsWith('.automatedclarity.com') ? ';domain=.automatedclarity.com' : '';
+      const sec = (location.protocol==='https:')?';Secure':'';
+      document.cookie =
+        name+'='+encodeURIComponent(value)+
+        ';expires='+d.toUTCString()+
+        ';path=/'+cross+';SameSite=Lax'+sec;
+    }catch(e){}
+  }
+
+  document.querySelectorAll('.answers button, .submit-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.classList.add('clicked');
+
+      // pulse effect
+      const rect = btn.getBoundingClientRect();
+      const centerX = rect.left + rect.width/2 + window.scrollX;
+      const centerY = rect.top + rect.height/2 + window.scrollY;
+      const p1=document.createElement('div'), p2=document.createElement('div');
+      p1.className='pulse-ring';
+      p2.className='pulse-ring secondary';
+      p1.style.left = p2.style.left = `${centerX}px`;
+      p1.style.top = p2.style.top = `${centerY}px`;
+      document.body.appendChild(p1); document.body.appendChild(p2);
+      setTimeout(()=>{p1.remove();p2.remove();},2500);
+
+      const text = btn.innerText.trim();
+      if (current === 1) { answers.q1_stage = text; if (btn.dataset.tag) answers.stage_tag = btn.dataset.tag; }
+      if (current === 2) { answers.q2_blocker = text; if (btn.dataset.tag) answers.blocker_tag = btn.dataset.tag; }
+      if (current === 3) answers.q3_goal = text;
+      if (current === 4) answers.q4_tried = text;
+      if (current === 5) answers.q5_ready = text;
+
+      // submit step
+      if (btn.classList.contains('submit-btn')) {
+        const first = document.querySelector('input[name="first_name"]').value.trim();
+        const email = document.querySelector('input[name="email"]').value.trim();
+        const phone = document.querySelector('input[name="phone"]').value.trim();
+        const consent = document.querySelector('input[name="consent"]').checked;
+        answers.first = first;
+
+        // PATH B–F logic (same as original)
+        let finalPath = 'f';
+        const blockerTag = (answers.blocker_tag||'').toLowerCase();
+        if (blockerTag.includes('busy')) finalPath = 'b';
+        else if (blockerTag.includes('start')) finalPath = 'c';
+        else if (blockerTag.includes('failed')) finalPath = 'd';
+        else if (blockerTag.includes('tech')) finalPath = 'e';
+        else if (blockerTag.includes('trust')) finalPath = 'f';
+
+        const payload = {
+          first_name:first,
+          email,
+          phone,
+          consent,
+          q1_stage:answers.q1_stage,
+          q2_blocker:answers.q2_blocker,
+          q3_goal:answers.q3_goal,
+          q4_tried:answers.q4_tried,
+          q5_ready:answers.q5_ready,
+          tags:[
+            'acx_demo_survey_completed',
+            'acx_vertical_hvac',
+            answers.stage_tag,
+            answers.blocker_tag
+          ].filter(Boolean)
+        };
+
+        try {
+          await fetch('https://demo.automatedclarity.com/api/survey', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(payload)
+          });
+        }
+        catch(e) {
+          console.warn('Survey post failed (continuing UX):', e);
+        }
+
+        acxSetCookie('acx_path', finalPath, 30);
+        acxSetCookie('acx_survey_done','1',30);
+        if (first) acxSetCookie('acx_first', first, 30);
+
+        const processing = document.getElementById('processing');
+        document.querySelectorAll('.slide').forEach(s=>s.remove());
+        document.querySelector('.logo')?.remove();
+        document.querySelector('.progress-bar')?.remove();
+        processing.style.display='flex';
+        setTimeout(()=>{ processing.style.animation='fadeOut 1.2s forwards'; }, 4000);
+        setTimeout(()=>{ window.location.href = 'https://clarity.automatedclarity.com/clarity'; }, 5000);
+        return;
+      }
+
+      // move to next slide
+      nodes[current].classList.add('active');
+      setTimeout(()=>{
+        slides[current].classList.remove('active');
+        current++;
+        if(current<slides.length) slides[current].classList.add('active');
+      }, 800);
+    });
+  });
+</script>
+</body>
+</html>
