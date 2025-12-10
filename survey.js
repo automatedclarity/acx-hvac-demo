@@ -1,15 +1,14 @@
 // survey.js
-// ACX HVAC Opportunity Scan – lightweight, no-framework wizard
-// Front-end only for now: shows diagnostic result on screen.
+// ACX HVAC Opportunity Scan – overlay survey
 
 (function () {
   // --- CONFIG -------------------------------------------------------------
 
   const categories = {
     missed: { label: "Missed calls & voicemail" },
-    quotes: { label: "Quote follow-up", },
+    quotes: { label: "Quote follow-up" },
     web: { label: "Web forms & lead sources" },
-    dormant: { label: "Past customers & maintenance", },
+    dormant: { label: "Past customers & maintenance" },
     reviews: { label: "Reviews & reputation" },
   };
 
@@ -443,7 +442,11 @@
   };
 
   function openSurvey(evt) {
-    if (evt) evt.preventDefault();
+    if (evt && evt.preventDefault) evt.preventDefault();
+    if (!overlayEl) {
+      injectStyles();
+      createOverlay();
+    }
     overlayEl.classList.add("acx-open");
     document.documentElement.style.overflow = "hidden";
     currentIndex = 0;
@@ -451,6 +454,7 @@
   }
 
   function closeSurvey() {
+    if (!overlayEl) return;
     overlayEl.classList.remove("acx-open");
     document.documentElement.style.overflow = "";
   }
@@ -483,7 +487,6 @@
   }
 
   function computeScores() {
-    // reset
     for (const key in scores) scores[key] = 0;
 
     questions.forEach((q) => {
@@ -512,7 +515,6 @@
     if (val === 1) {
       return "There’s a gap here when days get hectic. ACX would tighten this lane so enquiries are handled the same way every time.";
     }
-    // 2 or more
     switch (catKey) {
       case "missed":
         return "Missed calls are likely turning into missed jobs. ACX would capture intent, respond automatically, and keep the conversation alive for your team.";
@@ -562,16 +564,13 @@
       bodyEl.appendChild(help);
       bodyEl.appendChild(optionsWrap);
 
-      stepsLabelEl.textContent = `Step ${currentIndex + 1} of ${
-        questions.length
-      }`;
+      stepsLabelEl.textContent = `Step ${currentIndex + 1} of ${questions.length}`;
       backBtn.disabled = currentIndex === 0;
       nextBtn.textContent =
         currentIndex === questions.length - 1
           ? "See my clarity snapshot"
           : "Next";
     } else {
-      // Results view
       computeScores();
 
       const heading = document.createElement("div");
@@ -634,30 +633,11 @@
 
   // --- INIT ---------------------------------------------------------------
 
-  function attachTrigger() {
-    // Preferred: element with id acx-scan-button or data-acx-scan
-    let trigger =
-      document.getElementById("acx-scan-button") ||
-      document.querySelector("[data-acx-scan]");
-
-    if (!trigger) {
-      // Fallback: try to find a button/link containing the text
-      const candidates = Array.from(
-        document.querySelectorAll("button, a, div")
-      );
-      trigger = candidates.find((el) =>
-        /run hvac opportunity scan/i.test(el.textContent || "")
-      );
-    }
-
-    if (!trigger) return;
-
-    trigger.addEventListener("click", openSurvey);
-  }
-
   document.addEventListener("DOMContentLoaded", function () {
     injectStyles();
     createOverlay();
-    attachTrigger();
   });
+
+  // expose globally so HTML can call it directly
+  window.acxOpenSurvey = openSurvey;
 })();
