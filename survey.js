@@ -870,18 +870,25 @@
 
     // --- BOOTSTRAP ----------------------------------------------------------
 
+    // --- BOOTSTRAP ----------------------------------------------------------
+
   document.addEventListener("DOMContentLoaded", function () {
     injectStyles();
     createOverlay();
 
-    // Expose a clean global hook for your button
+    // Expose a clean global hook if you ever want to call it directly
     window.acxOpenSurvey = openSurvey;
 
-    const triggers = document.querySelectorAll("[data-acx-scan]");
-    triggers.forEach(function (el) {
-      el.addEventListener("click", function (evt) {
-        openSurvey(evt);
-      });
+    // Global click handler – catches ANY element with data-acx-scan
+    document.addEventListener("click", function (evt) {
+      var trigger = evt.target.closest("[data-acx-scan]");
+      if (!trigger) return;
+
+      // Kill default behaviour (like <a href="#"> scrolling to top)
+      if (evt.preventDefault) evt.preventDefault();
+      if (evt.stopPropagation) evt.stopPropagation();
+
+      openSurvey(evt);
     });
   });
 })();
