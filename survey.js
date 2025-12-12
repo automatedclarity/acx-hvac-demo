@@ -868,11 +868,14 @@
     }
   }
 
-  // --- BOOTSTRAP ----------------------------------------------------------
+    // --- BOOTSTRAP ----------------------------------------------------------
 
   document.addEventListener("DOMContentLoaded", function () {
     injectStyles();
     createOverlay();
+
+    // Expose a clean global hook for your button
+    window.acxOpenSurvey = openSurvey;
 
     const triggers = document.querySelectorAll("[data-acx-scan]");
     triggers.forEach(function (el) {
