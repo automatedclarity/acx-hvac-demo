@@ -1,8 +1,8 @@
 // survey.js
-// ACX HVAC Opportunity Scan – overlay survey
+// Automated Clarity™ – HVAC Opportunity Scan + Path B–F headspace
 
 (function () {
-  // --- CONFIG -------------------------------------------------------------
+  // --- HVAC LANE CONFIG ---------------------------------------------------
 
   const categories = {
     missed: { label: "Missed calls & voicemail" },
@@ -12,7 +12,7 @@
     reviews: { label: "Reviews & reputation" },
   };
 
-  const questions = [
+  const hvacQuestions = [
     {
       id: "missed",
       title: "When a call is missed during business hours, what usually happens?",
@@ -124,7 +124,42 @@
     },
   ];
 
-  // --- STYLE --------------------------------------------------------------
+  // --- PATH B–F HEADSPACE OPTIONS ----------------------------------------
+
+  const headspaceOptions = [
+    {
+      key: "b",
+      label: "I’m already too busy — I can’t take on more complexity.",
+      helper:
+        "Your days are full. You’re not looking for another project — you want something that quietly handles the work.",
+    },
+    {
+      key: "c",
+      label: "I’m not even sure where to start with fixing this.",
+      helper:
+        "You know there are leaks, but the first step hasn’t been clear. You want a simple, guided starting point.",
+    },
+    {
+      key: "d",
+      label: "I’ve tried to fix this before — it never really stuck.",
+      helper:
+        "You’ve done CRMs, campaigns, maybe even agencies. Pieces worked, but nothing held together long-term.",
+    },
+    {
+      key: "e",
+      label: "The tech and tools side of this feels overwhelming.",
+      helper:
+        "You’re not trying to become a software company. You want this handled without a pile of dashboards.",
+    },
+    {
+      key: "f",
+      label: "I’m wary — I don’t fully trust systems and promises like this.",
+      helper:
+        "You’ve seen big claims before. You’d rather see proof quietly working than hear a pitch.",
+    },
+  ];
+
+  // --- STYLE INJECTION ----------------------------------------------------
 
   function injectStyles() {
     if (document.getElementById("acx-survey-styles")) return;
@@ -206,6 +241,7 @@
         cursor: pointer;
         transition: border-color 150ms ease-out, box-shadow 150ms ease-out, background 150ms ease-out;
         background: #ffffff;
+        text-align: left;
       }
       .acx-survey-option:hover {
         border-color: #2563eb;
@@ -215,6 +251,14 @@
         border-color: #2563eb;
         background: rgba(37, 99, 235, 0.04);
         box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+      }
+      .acx-survey-option-label {
+        font-size: 14px;
+        margin-bottom: 2px;
+      }
+      .acx-survey-option-helper {
+        font-size: 12px;
+        color: #6b7280;
       }
       .acx-survey-footer {
         padding: 12px 24px 18px;
@@ -335,6 +379,11 @@
         color: #6b7280;
         margin-top: 8px;
       }
+      .acx-error-text {
+        font-size: 12px;
+        color: #b91c1c;
+        margin-top: 6px;
+      }
 
       @media (max-width: 640px) {
         .acx-survey-dialog {
@@ -352,9 +401,92 @@
     document.head.appendChild(style);
   }
 
-  // --- DOM CREATION -------------------------------------------------------
+  // --- STATE --------------------------------------------------------------
 
-  let overlayEl, bodyEl, stepsLabelEl, nextBtn, backBtn;
+  let overlayEl, bodyEl, stepsLabelEl, nextBtn, backBtn, subtitleEl, errorEl;
+
+  const scores = {
+    missed: 0,
+    quotes: 0,
+    web: 0,
+    dormant: 0,
+    reviews: 0,
+  };
+
+  let mode = "questions"; // "questions" | "headspace" | "results"
+  let currentQuestionIndex = 0;
+  const answers = {};
+  let selectedPathKey = null;
+  let submitStarted = false;
+  let submitError = "";
+
+  // --- HELPERS ------------------------------------------------------------
+
+  function resetState() {
+    mode = "questions";
+    currentQuestionIndex = 0;
+    for (const k in scores) scores[k] = 0;
+    for (const k in answers) delete answers[k];
+    selectedPathKey = null;
+    submitStarted = false;
+    submitError = "";
+  }
+
+  function severityForScore(v) {
+    if (v <= 0) return { label: "Protected", className: "acx-pill-good" };
+    if (v === 1) return { label: "Exposed", className: "acx-pill-warn" };
+    return { label: "Leak detected", className: "acx-pill-bad" };
+  }
+
+  function messageFor(catKey, val) {
+    if (val <= 0) {
+      return "This lane is mostly covered. Automated Clarity™ quietly watches it in the background and keeps it consistent on your busiest days.";
+    }
+    if (val === 1) {
+      return "There’s a gap here when days get hectic. Automated Clarity™ tightens this lane so enquiries are handled the same way every time.";
+    }
+    switch (catKey) {
+      case "missed":
+        return "Missed calls are likely turning into missed jobs. Automated Clarity™ captures intent, responds instantly, and keeps conversations alive for your team.";
+      case "quotes":
+        return "Quotes are going quiet after send. Automated Clarity™ follows up for you, revives quiet quotes, and brings decisions forward.";
+      case "web":
+        return "Forms and lead sources are fragmenting across inboxes. Automated Clarity™ unifies submissions into one stream and ensures responses happen fast.";
+      case "dormant":
+        return "Past customers aren’t being re-engaged consistently. Automated Clarity™ automates maintenance touchpoints and brings repeat work back without adding to your team’s workload.";
+      case "reviews":
+        return "You’re leaving reviews and local proof on the table. Automated Clarity™ standardizes review requests so every 5-star job has a chance to show up online.";
+      default:
+        return "Automated Clarity™ quietly monitors and protects this lane so fewer opportunities slip through unseen.";
+    }
+  }
+
+  function computeScores() {
+    for (const key in scores) scores[key] = 0;
+
+    hvacQuestions.forEach((q) => {
+      const idx = answers[q.id];
+      if (idx == null) return;
+      const opt = q.options[idx];
+      if (!opt || !opt.impacts) return;
+      Object.entries(opt.impacts).forEach(([cat, val]) => {
+        scores[cat] += val;
+      });
+    });
+
+    return scores;
+  }
+
+  function hvacSummaryString() {
+    const parts = [];
+    Object.entries(categories).forEach(([key, meta]) => {
+      const sev = severityForScore(scores[key]);
+      parts.push(`${meta.label}: ${sev.label}`);
+    });
+    return parts.join(" • ");
+  }
+
+  // --- DOM CREATION -------------------------------------------------------
 
   function createOverlay() {
     overlayEl = document.createElement("div");
@@ -373,12 +505,12 @@
 
     const title = document.createElement("h2");
     title.className = "acx-survey-title";
-    title.textContent = "HVAC Opportunity Scan";
+    title.textContent = "Automated Clarity™ — HVAC Opportunity Scan";
 
-    const subtitle = document.createElement("p");
-    subtitle.className = "acx-survey-subtitle";
-    subtitle.textContent =
-      "A short, no-pressure diagnostic that maps where ACX would quietly protect and recover revenue inside your shop.";
+    subtitleEl = document.createElement("p");
+    subtitleEl.className = "acx-survey-subtitle";
+    subtitleEl.textContent =
+      "A short diagnostic that reveals where Automated Clarity™ quietly protects revenue, recovers missed work, and keeps follow-up consistent — automatically.";
 
     const closeBtn = document.createElement("button");
     closeBtn.className = "acx-survey-close";
@@ -387,7 +519,7 @@
     closeBtn.addEventListener("click", closeSurvey);
 
     headerInner.appendChild(title);
-    headerInner.appendChild(subtitle);
+    headerInner.appendChild(subtitleEl);
     headerInner.appendChild(closeBtn);
     header.appendChild(headerInner);
 
@@ -421,6 +553,11 @@
     footer.appendChild(stepsLabelEl);
     footer.appendChild(actions);
 
+    errorEl = document.createElement("div");
+    errorEl.className = "acx-error-text";
+    errorEl.style.display = "none";
+    footer.appendChild(errorEl);
+
     dialog.appendChild(header);
     dialog.appendChild(bodyEl);
     dialog.appendChild(footer);
@@ -429,28 +566,18 @@
     document.body.appendChild(overlayEl);
   }
 
-  // --- STATE & RENDERING --------------------------------------------------
-
-  let currentIndex = 0;
-  const answers = {};
-  const scores = {
-    missed: 0,
-    quotes: 0,
-    web: 0,
-    dormant: 0,
-    reviews: 0,
-  };
+  // --- FLOW CONTROL -------------------------------------------------------
 
   function openSurvey(evt) {
     if (evt && evt.preventDefault) evt.preventDefault();
+    injectStyles();
     if (!overlayEl) {
-      injectStyles();
       createOverlay();
     }
+    resetState();
     overlayEl.classList.add("acx-open");
     document.documentElement.style.overflow = "hidden";
-    currentIndex = 0;
-    renderStep();
+    render();
   }
 
   function closeSurvey() {
@@ -460,82 +587,86 @@
   }
 
   function goStep(delta) {
-    if (currentIndex === questions.length && delta > 0) {
+    errorEl.style.display = "none";
+    submitError = "";
+
+    if (mode === "questions") {
+      const q = hvacQuestions[currentQuestionIndex];
+      if (delta > 0 && q && answers[q.id] == null) {
+        // Require an answer
+        errorEl.textContent = "Choose the option that feels closest to how your shop actually runs.";
+        errorEl.style.display = "block";
+        return;
+      }
+
+      currentQuestionIndex += delta;
+
+      if (currentQuestionIndex < 0) currentQuestionIndex = 0;
+
+      if (currentQuestionIndex >= hvacQuestions.length && delta > 0) {
+        // Move into headspace step
+        mode = "headspace";
+        render();
+        return;
+      }
+
+      render();
+      return;
+    }
+
+    if (mode === "headspace") {
+      if (delta > 0 && !selectedPathKey) {
+        errorEl.textContent = "Pick the option that feels closest — there’s no wrong answer.";
+        errorEl.style.display = "block";
+        return;
+      }
+
+      if (delta < 0) {
+        mode = "questions";
+        currentQuestionIndex = hvacQuestions.length - 1;
+        render();
+        return;
+      }
+
+      // Move into results
+      mode = "results";
+      render();
+      return;
+    }
+
+    if (mode === "results") {
+      if (delta < 0) {
+        mode = "headspace";
+        render();
+        return;
+      }
+      // Close on forward from results
       closeSurvey();
-      return;
     }
-
-    const q = questions[currentIndex];
-    if (delta > 0 && q && !answers[q.id]) {
-      // require an answer before moving forward
-      bodyEl.querySelectorAll(".acx-survey-option").forEach((opt) => {
-        opt.classList.add("acx-needs-choice");
-        setTimeout(() => opt.classList.remove("acx-needs-choice"), 300);
-      });
-      return;
-    }
-
-    currentIndex += delta;
-    if (currentIndex < 0) currentIndex = 0;
-    if (currentIndex > questions.length) currentIndex = questions.length;
-    renderStep();
   }
 
   function selectOption(questionId, optionIndex) {
     answers[questionId] = optionIndex;
-    renderStep(); // re-render to highlight selection
+    errorEl.style.display = "none";
+    render();
   }
 
-  function computeScores() {
-    for (const key in scores) scores[key] = 0;
-
-    questions.forEach((q) => {
-      const idx = answers[q.id];
-      if (idx == null) return;
-      const opt = q.options[idx];
-      if (!opt || !opt.impacts) return;
-      Object.entries(opt.impacts).forEach(([cat, val]) => {
-        scores[cat] += val;
-      });
-    });
-
-    return scores;
+  function selectHeadspace(key) {
+    selectedPathKey = key;
+    errorEl.style.display = "none";
+    render();
   }
 
-  function severityForScore(v) {
-    if (v <= 0) return { label: "Protected", className: "acx-pill-good" };
-    if (v === 1) return { label: "Exposed", className: "acx-pill-warn" };
-    return { label: "Leak detected", className: "acx-pill-bad" };
-  }
+  // --- RENDER -------------------------------------------------------------
 
-  function messageFor(catKey, val) {
-    if (val <= 0) {
-      return "This lane is mostly covered. ACX would watch it in the background and keep it consistent on your busiest days.";
-    }
-    if (val === 1) {
-      return "There’s a gap here when days get hectic. ACX would tighten this lane so enquiries are handled the same way every time.";
-    }
-    switch (catKey) {
-      case "missed":
-        return "Missed calls are likely turning into missed jobs. ACX would capture intent, respond automatically, and keep the conversation alive for your team.";
-      case "quotes":
-        return "Quotes are going quiet after send. ACX would follow up automatically, recover quiet quotes, and show you how much is sitting in limbo.";
-      case "web":
-        return "Forms and lead sources are fragmenting across inboxes. ACX would unify them and make sure every enquiry gets a response.";
-      case "dormant":
-        return "Past customers aren’t being re-engaged consistently. ACX would run quiet, automated touchpoints that bring work back without adding to your team’s workload.";
-      case "reviews":
-        return "You’re leaving reviews and local proof on the table. ACX would standardize the review ask so every good job has a chance to show up online.";
-      default:
-        return "ACX would quietly monitor and protect this lane so fewer opportunities slip through unseen.";
-    }
-  }
-
-  function renderStep() {
+  function render() {
     bodyEl.innerHTML = "";
 
-    if (currentIndex < questions.length) {
-      const q = questions[currentIndex];
+    if (mode === "questions") {
+      const q = hvacQuestions[currentQuestionIndex];
+
+      subtitleEl.textContent =
+        "First, we’ll map where opportunities are currently slipping — then we’ll show you what Automated Clarity™ would quietly watch for you.";
 
       const title = document.createElement("div");
       title.className = "acx-survey-q-title";
@@ -555,7 +686,12 @@
         if (answers[q.id] === idx) {
           btn.classList.add("acx-selected");
         }
-        btn.textContent = opt.label;
+
+        const labelEl = document.createElement("div");
+        labelEl.className = "acx-survey-option-label";
+        labelEl.textContent = opt.label;
+
+        btn.appendChild(labelEl);
         btn.addEventListener("click", () => selectOption(q.id, idx));
         optionsWrap.appendChild(btn);
       });
@@ -564,80 +700,185 @@
       bodyEl.appendChild(help);
       bodyEl.appendChild(optionsWrap);
 
-      stepsLabelEl.textContent = `Step ${currentIndex + 1} of ${questions.length}`;
-      backBtn.disabled = currentIndex === 0;
+      const stepNum = currentQuestionIndex + 1;
+      const totalSteps = hvacQuestions.length + 2; // + headspace + snapshot
+      stepsLabelEl.textContent = `Step ${stepNum} of ${totalSteps}`;
+      backBtn.disabled = currentQuestionIndex === 0;
       nextBtn.textContent =
-        currentIndex === questions.length - 1
-          ? "See my clarity snapshot"
+        currentQuestionIndex === hvacQuestions.length - 1
+          ? "Continue"
           : "Next";
-    } else {
-      computeScores();
+      return;
+    }
 
-      const heading = document.createElement("div");
-      heading.className = "acx-survey-q-title";
-      heading.textContent = "Here’s what ACX would watch inside your shop.";
+    if (mode === "headspace") {
+      subtitleEl.textContent =
+        "Now, let’s anchor where this actually lands for you. There’s no wrong answer — just pick what feels closest.";
 
-      const intro = document.createElement("p");
-      intro.className = "acx-results-intro";
-      intro.textContent =
-        "Based on your answers, these are the lanes where revenue is most at risk — and where a 24/7 Revenue Control Layer™ would quietly protect it for you.";
+      const title = document.createElement("div");
+      title.className = "acx-survey-q-title";
+      title.textContent = "Which of these feels closest to where you are right now?";
 
-      const grid = document.createElement("div");
-      grid.className = "acx-results-grid";
+      const help = document.createElement("div");
+      help.className = "acx-survey-q-help";
+      help.textContent =
+        "This helps Automated Clarity™ respond in a way that matches your reality — whether you’re overloaded, skeptical, or simply unsure where to start.";
 
-      Object.entries(categories).forEach(([key, meta]) => {
-        const value = scores[key];
-        const severity = severityForScore(value);
+      const optionsWrap = document.createElement("div");
+      optionsWrap.className = "acx-survey-options";
 
-        const card = document.createElement("div");
-        card.className = "acx-result-card";
+      headspaceOptions.forEach((opt) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "acx-survey-option";
+        if (selectedPathKey === opt.key) {
+          btn.classList.add("acx-selected");
+        }
 
-        const row = document.createElement("div");
-        row.className = "acx-result-label-row";
+        const labelEl = document.createElement("div");
+        labelEl.className = "acx-survey-option-label";
+        labelEl.textContent = opt.label;
 
-        const name = document.createElement("div");
-        name.className = "acx-result-name";
-        name.textContent = meta.label;
+        const helperEl = document.createElement("div");
+        helperEl.className = "acx-survey-option-helper";
+        helperEl.textContent = opt.helper;
 
-        const pill = document.createElement("span");
-        pill.className = `acx-pill ${severity.className}`;
-        pill.textContent = severity.label;
-
-        row.appendChild(name);
-        row.appendChild(pill);
-
-        const text = document.createElement("div");
-        text.className = "acx-result-text";
-        text.textContent = messageFor(key, value);
-
-        card.appendChild(row);
-        card.appendChild(text);
-        grid.appendChild(card);
+        btn.appendChild(labelEl);
+        btn.appendChild(helperEl);
+        btn.addEventListener("click", () => selectHeadspace(opt.key));
+        optionsWrap.appendChild(btn);
       });
 
-      const note = document.createElement("p");
-      note.className = "acx-results-note";
-      note.textContent =
-        "This snapshot is private to you. No one from our side sees your answers until you choose to share them. ACX is built to remove pressure — not add more.";
+      bodyEl.appendChild(title);
+      bodyEl.appendChild(help);
+      bodyEl.appendChild(optionsWrap);
 
-      bodyEl.appendChild(heading);
-      bodyEl.appendChild(intro);
-      bodyEl.appendChild(grid);
-      bodyEl.appendChild(note);
-
-      stepsLabelEl.textContent = "Snapshot ready";
+      const stepNum = hvacQuestions.length + 1;
+      const totalSteps = hvacQuestions.length + 2;
+      stepsLabelEl.textContent = `Step ${stepNum} of ${totalSteps}`;
       backBtn.disabled = false;
-      nextBtn.textContent = "Close";
+      nextBtn.textContent = "See my clarity snapshot";
+
+      return;
+    }
+
+    // RESULTS MODE
+    subtitleEl.textContent =
+      "Here’s how Automated Clarity™ would quietly sit underneath your shop — watching, protecting, and recovering revenue without adding to your team’s workload.";
+
+    computeScores();
+
+    const heading = document.createElement("div");
+    heading.className = "acx-survey-q-title";
+    heading.textContent =
+      "Here’s what Automated Clarity™ would watch inside your shop.";
+
+    const intro = document.createElement("p");
+    intro.className = "acx-results-intro";
+    intro.textContent =
+      "Based on your answers, these are the lanes where revenue is most exposed — and where the Automated Clarity™ Revenue Control Layer™ quietly protects it 24/7.";
+
+    const grid = document.createElement("div");
+    grid.className = "acx-results-grid";
+
+    Object.entries(categories).forEach(([key, meta]) => {
+      const value = scores[key];
+      const severity = severityForScore(value);
+
+      const card = document.createElement("div");
+      card.className = "acx-result-card";
+
+      const row = document.createElement("div");
+      row.className = "acx-result-label-row";
+
+      const name = document.createElement("div");
+      name.className = "acx-result-name";
+      name.textContent = meta.label;
+
+      const pill = document.createElement("span");
+      pill.className = `acx-pill ${severity.className}`;
+      pill.textContent = severity.label;
+
+      row.appendChild(name);
+      row.appendChild(pill);
+
+      const text = document.createElement("div");
+      text.className = "acx-result-text";
+      text.textContent = messageFor(key, value);
+
+      card.appendChild(row);
+      card.appendChild(text);
+      grid.appendChild(card);
+    });
+
+    const note = document.createElement("p");
+    note.className = "acx-results-note";
+    note.textContent =
+      "This snapshot is private to you. No one from our side sees your answers unless you choose to share them. Automated Clarity™ is designed to remove pressure from owners and staff — no dashboards, no task lists, no new habits required.";
+
+    bodyEl.appendChild(heading);
+    bodyEl.appendChild(intro);
+    bodyEl.appendChild(grid);
+    bodyEl.appendChild(note);
+
+    const stepNum = hvacQuestions.length + 2;
+    const totalSteps = hvacQuestions.length + 2;
+    stepsLabelEl.textContent = `Step ${stepNum} of ${totalSteps}`;
+    backBtn.disabled = false;
+    nextBtn.textContent = "Close";
+
+    if (!submitStarted) {
+      submitStarted = true;
+      sendResultsToBackend().catch(() => {
+        // fail silently in UI, show small hint
+        errorEl.textContent =
+          "Your snapshot couldn’t be saved in the background, but the on-screen results are accurate.";
+        errorEl.style.display = "block";
+      });
     }
   }
 
-  // --- INIT ---------------------------------------------------------------
+  // --- BACKEND CALL -------------------------------------------------------
+
+  async function sendResultsToBackend() {
+    try {
+      const scoresCopy = { ...scores };
+      const summary = hvacSummaryString();
+
+      // optional hook for later: if you wire in email/name fields,
+      // you can read them from the page and pass through here.
+      const payload = {
+        hvac_scores: scoresCopy,
+        path_key: selectedPathKey || null,
+        snapshot_summary: summary,
+        page_url: window.location.href || "",
+      };
+
+      await fetch("/.netlify/functions/hvac-survey", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      // swallow; caller will show a soft message
+      console.error("Failed to send HVAC survey results:", err);
+      throw err;
+    }
+  }
+
+  // --- BOOTSTRAP ----------------------------------------------------------
 
   document.addEventListener("DOMContentLoaded", function () {
     injectStyles();
     createOverlay();
-  });
 
-  // expose globally so HTML can call it directly
-  window.acxOpenSurvey = openSurvey;
+    const triggers = document.querySelectorAll("[data-acx-scan]");
+    triggers.forEach(function (el) {
+      el.addEventListener("click", function (evt) {
+        openSurvey(evt);
+      });
+    });
+  });
 })();
