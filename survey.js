@@ -868,23 +868,48 @@
     }
   }
 
-    // --- BOOTSTRAP ----------------------------------------------------------
+    // Find the real "Run HVAC Opportunity Scan" link that Nuxt/GHL renders
+  function patchScanTrigger() {
+    // Look for anchors that behave like buttons
+    var anchors = document.querySelectorAll('a[href="#"], a[href="/"], a[href=""]');
+    var target = null;
 
-    // --- BOOTSTRAP ----------------------------------------------------------
+    anchors.forEach(function (a) {
+      var text = (a.textContent || "").replace(/\s+/g, " ").trim();
+      if (text.indexOf("Run HVAC Opportunity Scan") !== -1) {
+        target = a;
+      }
+    });
 
+    if (!target) {
+      return;
+    }
+
+    // Stop it acting like a link so it can't jump the page
+    target.setAttribute("href", "javascript:void(0)");
+
+    // Mark it so our click handler can see it
+    target.setAttribute("data-acx-scan", "1");
+  }
+
+  // --- BOOTSTRAP ----------------------------------------------------------
   document.addEventListener("DOMContentLoaded", function () {
     injectStyles();
     createOverlay();
 
-    // Expose a clean global hook if you ever want to call it directly
+    // Optional: expose global hook
     window.acxOpenSurvey = openSurvey;
 
-    // Global click handler – catches ANY element with data-acx-scan
+    // Give Nuxt/GHL time to hydrate, then patch the real CTA
+    patchScanTrigger();
+    setTimeout(patchScanTrigger, 250);
+    setTimeout(patchScanTrigger, 1000);
+
+    // Global click handler – anything with data-acx-scan
     document.addEventListener("click", function (evt) {
       var trigger = evt.target.closest("[data-acx-scan]");
       if (!trigger) return;
 
-      // Kill default behaviour (like <a href="#"> scrolling to top)
       if (evt.preventDefault) evt.preventDefault();
       if (evt.stopPropagation) evt.stopPropagation();
 
