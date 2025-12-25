@@ -1,10 +1,27 @@
 /* ============================================================
    Automated Clarity™ — HVAC Opportunity Scan
-   Overlay-only survey (NO snapshot yet)
-   Netlify + GHL safe
+   GHL-SAFE / SCROLL-SAFE / FINAL
    ============================================================ */
 
 (function () {
+
+  /* -------------------- HARD STOP GHL SCROLL -------------------- */
+  document.addEventListener(
+    "click",
+    function (e) {
+      const trigger = e.target.closest("#ac-survey-trigger");
+      if (!trigger) return;
+
+      // KILL EVERYTHING GHL TRIES TO DO
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      openSurvey();
+      return false;
+    },
+    true // 👈 CAPTURE PHASE — THIS IS THE KEY
+  );
 
   /* -------------------- QUESTIONS (LOCKED) -------------------- */
 
@@ -73,145 +90,100 @@
     }
   ];
 
-  /* -------------------- STATE -------------------- */
-
-  let currentStep = 0;
+  let overlay, bodyEl, stepEl;
+  let step = 0;
   const answers = {};
-  let overlay, bodyEl, stepLabel;
 
   /* -------------------- STYLES -------------------- */
 
   function injectStyles() {
     if (document.getElementById("ac-survey-styles")) return;
 
-    const style = document.createElement("style");
-    style.id = "ac-survey-styles";
-    style.textContent = `
+    const s = document.createElement("style");
+    s.id = "ac-survey-styles";
+    s.textContent = `
       .ac-survey-overlay {
         position: fixed;
         inset: 0;
-        background: rgba(3,11,26,0.88);
+        background: rgba(3,11,26,.88);
         backdrop-filter: blur(14px);
-        z-index: 9999;
+        z-index: 99999;
         display: flex;
         align-items: center;
         justify-content: center;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 200ms ease;
+        transition: opacity .2s ease;
       }
       .ac-survey-overlay.open {
         opacity: 1;
         pointer-events: auto;
       }
-      .ac-survey-panel {
-        width: 100%;
+      .ac-panel {
         max-width: 760px;
+        width: 100%;
         margin: 16px;
         background: #0b1220;
         color: #e5e7eb;
         border-radius: 22px;
-        box-shadow: 0 40px 120px rgba(0,0,0,0.65);
         overflow: hidden;
-        display: flex;
-        flex-direction: column;
+        box-shadow: 0 40px 120px rgba(0,0,0,.65);
       }
-      .ac-survey-header {
+      .ac-header {
         padding: 22px 26px 14px;
-        border-bottom: 1px solid rgba(148,163,184,0.18);
+        border-bottom: 1px solid rgba(148,163,184,.18);
       }
-      .ac-eyebrow {
-        font-size: 11px;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: #94a3b8;
-        margin-bottom: 6px;
-      }
-      .ac-title {
-        font-size: 20px;
-        font-weight: 600;
-      }
-      .ac-survey-body {
-        padding: 26px;
-      }
-      .ac-q-title {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 6px;
-      }
-      .ac-q-help {
-        font-size: 13px;
-        color: #94a3b8;
-        margin-bottom: 18px;
-      }
-      .ac-options {
-        display: grid;
-        gap: 12px;
-      }
-      .ac-option {
-        background: rgba(255,255,255,0.02);
-        border: 1px solid rgba(148,163,184,0.25);
+      .ac-title { font-size: 20px; font-weight: 600; }
+      .ac-body { padding: 26px; }
+      .ac-q { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+      .ac-help { font-size: 13px; color: #94a3b8; margin-bottom: 18px; }
+      .ac-opt {
+        border: 1px solid rgba(148,163,184,.25);
         border-radius: 14px;
         padding: 14px 16px;
         cursor: pointer;
-        transition: all 160ms ease;
-        font-size: 14px;
+        margin-bottom: 12px;
       }
-      .ac-option:hover {
+      .ac-opt.selected {
         border-color: #a2dfe4;
-        box-shadow: 0 0 0 1px rgba(162,223,228,0.25);
+        background: rgba(162,223,228,.06);
       }
-      .ac-option.selected {
-        border-color: #a2dfe4;
-        background: rgba(162,223,228,0.06);
-      }
-      .ac-survey-footer {
+      .ac-footer {
         padding: 16px 26px;
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        border-top: 1px solid rgba(148,163,184,0.18);
-      }
-      .ac-steps {
-        font-size: 12px;
-        color: #94a3b8;
+        border-top: 1px solid rgba(148,163,184,.18);
       }
       .ac-btn {
         border-radius: 999px;
         padding: 8px 18px;
-        font-size: 14px;
-        border: 1px solid rgba(148,163,184,0.35);
-        background: transparent;
-        color: #e5e7eb;
         cursor: pointer;
       }
       .ac-btn.primary {
         background: #a2dfe4;
         color: #020617;
-        border-color: #a2dfe4;
       }
     `;
-    document.head.appendChild(style);
+    document.head.appendChild(s);
   }
 
-  /* -------------------- BUILD OVERLAY -------------------- */
+  /* -------------------- BUILD -------------------- */
 
-  function buildOverlay() {
+  function build() {
     overlay = document.createElement("div");
     overlay.className = "ac-survey-overlay";
 
     overlay.innerHTML = `
-      <div class="ac-survey-panel">
-        <div class="ac-survey-header">
-          <div class="ac-eyebrow">Automated Clarity™</div>
+      <div class="ac-panel">
+        <div class="ac-header">
           <div class="ac-title">HVAC Opportunity Scan</div>
         </div>
-        <div class="ac-survey-body"></div>
-        <div class="ac-survey-footer">
-          <div class="ac-steps"></div>
+        <div class="ac-body"></div>
+        <div class="ac-footer">
+          <div id="ac-step"></div>
           <div>
-            <button class="ac-btn" data-back>Back</button>
-            <button class="ac-btn primary" data-next>Next</button>
+            <button class="ac-btn" id="ac-back">Back</button>
+            <button class="ac-btn primary" id="ac-next">Next</button>
           </div>
         </div>
       </div>
@@ -219,77 +191,55 @@
 
     document.body.appendChild(overlay);
 
-    bodyEl = overlay.querySelector(".ac-survey-body");
-    stepLabel = overlay.querySelector(".ac-steps");
+    bodyEl = overlay.querySelector(".ac-body");
+    stepEl = overlay.querySelector("#ac-step");
 
-    overlay.querySelector("[data-back]").onclick = () => step(-1);
-    overlay.querySelector("[data-next]").onclick = () => step(1);
+    overlay.querySelector("#ac-back").onclick = () => move(-1);
+    overlay.querySelector("#ac-next").onclick = () => move(1);
   }
 
-  /* -------------------- RENDER -------------------- */
-
   function render() {
-    const q = questions[currentStep];
-
+    const q = questions[step];
     bodyEl.innerHTML = `
-      <div class="ac-q-title">${q.title}</div>
-      <div class="ac-q-help">${q.help}</div>
-      <div class="ac-options">
-        ${q.options.map((opt, i) => `
-          <div class="ac-option ${answers[q.id] === i ? "selected" : ""}" data-i="${i}">
-            ${opt}
-          </div>
-        `).join("")}
-      </div>
+      <div class="ac-q">${q.title}</div>
+      <div class="ac-help">${q.help}</div>
+      ${q.options
+        .map(
+          (o, i) =>
+            `<div class="ac-opt ${answers[q.id] === i ? "selected" : ""}" data-i="${i}">${o}</div>`
+        )
+        .join("")}
     `;
 
-    bodyEl.querySelectorAll(".ac-option").forEach(el => {
+    bodyEl.querySelectorAll(".ac-opt").forEach(el => {
       el.onclick = () => {
-        answers[q.id] = parseInt(el.dataset.i, 10);
+        answers[q.id] = Number(el.dataset.i);
         render();
       };
     });
 
-    stepLabel.textContent = `Step ${currentStep + 1} of ${questions.length}`;
+    stepEl.textContent = `Step ${step + 1} of ${questions.length}`;
   }
 
-  function step(dir) {
-    if (dir > 0 && answers[questions[currentStep].id] == null) return;
-
-    currentStep += dir;
-    if (currentStep < 0) currentStep = 0;
-    if (currentStep >= questions.length) {
-      close();
-      return;
-    }
-    render();
+  function move(dir) {
+    if (dir > 0 && answers[questions[step].id] == null) return;
+    step += dir;
+    if (step >= questions.length) closeSurvey();
+    else render();
   }
 
-  /* -------------------- OPEN / CLOSE -------------------- */
-
-  function open() {
+  function openSurvey() {
     injectStyles();
-    if (!overlay) buildOverlay();
+    if (!overlay) build();
     overlay.classList.add("open");
     document.documentElement.style.overflow = "hidden";
-    currentStep = 0;
+    step = 0;
     render();
   }
 
-  function close() {
+  function closeSurvey() {
     overlay.classList.remove("open");
     document.documentElement.style.overflow = "";
   }
-
-  /* -------------------- TRIGGER (NO SCROLL JUMP) -------------------- */
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const trigger = document.getElementById("ac-survey-trigger");
-    if (trigger) {
-      trigger.addEventListener("click", () => {
-        open();
-      });
-    }
-  });
 
 })();
