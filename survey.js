@@ -1,10 +1,11 @@
 /* ============================================================
    Automated Clarity™ — HVAC Opportunity Scan
-   GHL-safe overlay trigger (NO SCROLL JUMP)
+   FULL STANDALONE OVERLAY (GHL-SAFE)
    ============================================================ */
 
 (function () {
-  /* -------------------- QUESTIONS (LOCKED) -------------------- */
+
+  /* ---------------- QUESTIONS (LOCKED) ---------------- */
 
   const questions = [
     {
@@ -60,7 +61,7 @@
     {
       id: "headspace",
       title: "Which of these feels closest to where you are right now?",
-      help: "This won’t change your results — it just helps frame what you see next.",
+      help: "This won’t change your results — it only frames what you see next.",
       options: [
         "We’re busy — days are always full.",
         "I’m not sure where to start fixing things.",
@@ -71,13 +72,11 @@
     }
   ];
 
-  /* -------------------- STATE -------------------- */
-
   let currentStep = 0;
   const answers = {};
-  let overlay, bodyEl, stepLabel;
+  let overlay, bodyEl, stepEl;
 
-  /* -------------------- STYLES -------------------- */
+  /* ---------------- STYLES ---------------- */
 
   function injectStyles() {
     if (document.getElementById("ac-survey-styles")) return;
@@ -89,7 +88,7 @@
         position: fixed;
         inset: 0;
         background: rgba(3,11,26,0.88);
-        backdrop-filter: blur(14px);
+        backdrop-filter: blur(16px);
         z-index: 999999;
         display: flex;
         align-items: center;
@@ -103,40 +102,82 @@
         pointer-events: auto;
       }
       .ac-panel {
+        max-width: 760px;
+        width: 100%;
+        margin: 16px;
         background: #0b1220;
         color: #e5e7eb;
-        width: 100%;
-        max-width: 760px;
-        margin: 16px;
         border-radius: 22px;
-        box-shadow: 0 40px 120px rgba(0,0,0,.6);
+        box-shadow: 0 50px 140px rgba(0,0,0,.7);
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
       }
-      .ac-head { padding: 22px 26px; border-bottom: 1px solid rgba(148,163,184,.18); }
-      .ac-title { font-size: 20px; font-weight: 600; }
-      .ac-body { padding: 26px; }
-      .ac-q { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
-      .ac-help { font-size: 13px; color: #94a3b8; margin-bottom: 18px; }
-      .ac-options { display: grid; gap: 12px; }
-      .ac-opt {
-        border: 1px solid rgba(148,163,184,.25);
+      .ac-header {
+        padding: 22px 26px 14px;
+        border-bottom: 1px solid rgba(148,163,184,.18);
+      }
+      .ac-eyebrow {
+        font-size: 11px;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 6px;
+      }
+      .ac-title {
+        font-size: 20px;
+        font-weight: 600;
+      }
+      .ac-body {
+        padding: 26px;
+      }
+      .ac-q-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .ac-q-help {
+        font-size: 13px;
+        color: #94a3b8;
+        margin-bottom: 18px;
+      }
+      .ac-options {
+        display: grid;
+        gap: 12px;
+      }
+      .ac-option {
+        border: 1px solid rgba(148,163,184,.28);
         border-radius: 14px;
         padding: 14px 16px;
         cursor: pointer;
+        transition: all .15s ease;
       }
-      .ac-opt.sel {
+      .ac-option:hover {
         border-color: #a2dfe4;
-        background: rgba(162,223,228,.06);
+        box-shadow: 0 0 0 1px rgba(162,223,228,.25);
       }
-      .ac-foot {
+      .ac-option.selected {
+        background: rgba(162,223,228,.06);
+        border-color: #a2dfe4;
+      }
+      .ac-footer {
         padding: 16px 26px;
         border-top: 1px solid rgba(148,163,184,.18);
         display: flex;
         justify-content: space-between;
+        align-items: center;
+      }
+      .ac-steps {
+        font-size: 12px;
+        color: #94a3b8;
+      }
+      .ac-actions {
+        display: flex;
+        gap: 10px;
       }
       .ac-btn {
-        border-radius: 999px;
         padding: 8px 18px;
+        border-radius: 999px;
         border: 1px solid rgba(148,163,184,.35);
         background: transparent;
         color: #e5e7eb;
@@ -151,55 +192,73 @@
     document.head.appendChild(s);
   }
 
-  /* -------------------- BUILD -------------------- */
+  /* ---------------- BUILD ---------------- */
 
   function build() {
     overlay = document.createElement("div");
     overlay.className = "ac-overlay";
+
     overlay.innerHTML = `
       <div class="ac-panel">
-        <div class="ac-head"><div class="ac-title">HVAC Opportunity Scan</div></div>
+        <div class="ac-header">
+          <div class="ac-eyebrow">Automated Clarity™</div>
+          <div class="ac-title">HVAC Opportunity Scan</div>
+        </div>
         <div class="ac-body"></div>
-        <div class="ac-foot">
+        <div class="ac-footer">
           <div class="ac-steps"></div>
-          <div>
-            <button class="ac-btn" id="ac-back">Back</button>
-            <button class="ac-btn primary" id="ac-next">Next</button>
+          <div class="ac-actions">
+            <div class="ac-btn" id="ac-back">Back</div>
+            <div class="ac-btn primary" id="ac-next">Next</div>
           </div>
         </div>
       </div>
     `;
+
     document.body.appendChild(overlay);
 
     bodyEl = overlay.querySelector(".ac-body");
-    stepLabel = overlay.querySelector(".ac-steps");
+    stepEl = overlay.querySelector(".ac-steps");
 
-    overlay.querySelector("#ac-back").onclick = () => step(-1);
-    overlay.querySelector("#ac-next").onclick = () => step(1);
+    overlay.querySelector("#ac-back").onpointerdown = () => step(-1);
+    overlay.querySelector("#ac-next").onpointerdown = () => step(1);
   }
+
+  /* ---------------- RENDER ---------------- */
 
   function render() {
     const q = questions[currentStep];
+
     bodyEl.innerHTML = `
-      <div class="ac-q">${q.title}</div>
-      <div class="ac-help">${q.help}</div>
+      <div class="ac-q-title">${q.title}</div>
+      <div class="ac-q-help">${q.help}</div>
       <div class="ac-options">
         ${q.options.map((o,i)=>`
-          <div class="ac-opt ${answers[q.id]===i?'sel':''}" data-i="${i}">${o}</div>
+          <div class="ac-option ${answers[q.id]===i?'selected':''}" data-i="${i}">
+            ${o}
+          </div>
         `).join("")}
       </div>
     `;
-    bodyEl.querySelectorAll(".ac-opt").forEach(el=>{
-      el.onclick=()=>{answers[q.id]=+el.dataset.i;render();}
+
+    bodyEl.querySelectorAll(".ac-option").forEach(el=>{
+      el.onpointerdown = ()=>{
+        answers[q.id] = Number(el.dataset.i);
+        render();
+      };
     });
-    stepLabel.textContent = `Step ${currentStep+1} of ${questions.length}`;
+
+    stepEl.textContent = `Step ${currentStep+1} of ${questions.length}`;
   }
 
-  function step(d) {
-    if (d>0 && answers[questions[currentStep].id]==null) return;
-    currentStep+=d;
-    if (currentStep>=questions.length) close();
-    else if (currentStep<0) currentStep=0;
+  function step(dir) {
+    if (dir>0 && answers[questions[currentStep].id]==null) return;
+    currentStep += dir;
+    if (currentStep < 0) currentStep = 0;
+    if (currentStep >= questions.length) {
+      close();
+      return;
+    }
     render();
   }
 
@@ -207,31 +266,27 @@
     injectStyles();
     if (!overlay) build();
     overlay.classList.add("open");
-    document.documentElement.style.overflow="hidden";
-    currentStep=0;
+    document.documentElement.style.overflow = "hidden";
+    currentStep = 0;
     render();
   }
 
   function close() {
     overlay.classList.remove("open");
-    document.documentElement.style.overflow="";
+    document.documentElement.style.overflow = "";
   }
 
-  /* -------------------- GHL-SAFE TRIGGER -------------------- */
+  /* ---------------- TRIGGER (GHL SAFE) ---------------- */
 
-  window.__AC_OPEN = false;
+  document.addEventListener("DOMContentLoaded", () => {
+    const t = document.getElementById("ac-survey-trigger");
+    if (!t) return;
 
-  document.addEventListener("click", e=>{
-    if (e.target.closest("#ac-survey-trigger")) {
-      window.__AC_OPEN = true;
-    }
+    t.addEventListener("pointerdown", (e)=>{
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      setTimeout(open, 0);
+    }, true);
   });
-
-  setInterval(()=>{
-    if (window.__AC_OPEN) {
-      window.__AC_OPEN=false;
-      open();
-    }
-  },50);
 
 })();
