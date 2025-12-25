@@ -1,12 +1,31 @@
 <!DOCTYPE html><html  lang="en" data-capo=""><head><meta charset="utf-8">
 <script>
-  (function () {
-    const _scrollTo = window.scrollTo;
-    window.scrollTo = function (x, y) {
-      if (x === 0 && y === 0) return;
-      return _scrollTo.apply(this, arguments);
-    };
-  })();
+(function () {
+  // --- block scrollTo
+  const _scrollTo = window.scrollTo;
+  window.scrollTo = function () {
+    return;
+  };
+
+  // --- block scrollIntoView
+  const _scrollIntoView = Element.prototype.scrollIntoView;
+  Element.prototype.scrollIntoView = function () {
+    return;
+  };
+
+  // --- block focus-induced scroll
+  const _focus = HTMLElement.prototype.focus;
+  HTMLElement.prototype.focus = function () {
+    return;
+  };
+
+  // --- safety: restore normal behavior AFTER load
+  window.addEventListener("load", () => {
+    window.scrollTo = _scrollTo;
+    Element.prototype.scrollIntoView = _scrollIntoView;
+    HTMLElement.prototype.focus = _focus;
+  });
+})();
 </script>
  <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="anonymous">
