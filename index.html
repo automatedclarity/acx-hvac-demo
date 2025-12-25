@@ -1,5 +1,14 @@
 <!DOCTYPE html><html  lang="en" data-capo=""><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  (function () {
+    const _scrollTo = window.scrollTo;
+    window.scrollTo = function (x, y) {
+      if (x === 0 && y === 0) return;
+      return _scrollTo.apply(this, arguments);
+    };
+  })();
+</script>
+ <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="anonymous">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" crossorigin="anonymous">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&display=swap" media="print" onload="this.media='all'">
