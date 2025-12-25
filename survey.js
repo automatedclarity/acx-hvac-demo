@@ -1,7 +1,7 @@
 /* ============================================================
    Automated Clarity™ — HVAC Opportunity Scan
-   Overlay-only survey (no snapshot yet)
-   Drop-in file: /survey.js
+   Overlay-only survey with reveal step
+   File: /survey.js
    ============================================================ */
 
 (function () {
@@ -61,7 +61,7 @@
     {
       id: "headspace",
       title: "Which of these feels closest to where you are right now?",
-      help: "This won’t change your results — it just helps us frame what you see next.",
+      help: "This won’t change your results — it just helps frame what you see next.",
       options: [
         "We’re busy — days are always full.",
         "I’m not sure where to start fixing things.",
@@ -76,6 +76,7 @@
 
   let currentStep = 0;
   const answers = {};
+  let overlay, bodyEl, stepLabel;
 
   /* -------------------- STYLES -------------------- */
 
@@ -88,7 +89,7 @@
       .ac-survey-overlay {
         position: fixed;
         inset: 0;
-        background: rgba(3, 11, 26, 0.85);
+        background: rgba(3,11,26,0.88);
         backdrop-filter: blur(14px);
         z-index: 9999;
         display: flex;
@@ -110,7 +111,7 @@
         background: #0b1220;
         color: #e5e7eb;
         border-radius: 22px;
-        box-shadow: 0 40px 120px rgba(0,0,0,0.6);
+        box-shadow: 0 40px 120px rgba(0,0,0,0.65);
         overflow: hidden;
         display: flex;
         flex-direction: column;
@@ -136,6 +137,7 @@
       .ac-survey-body {
         padding: 26px;
       }
+
       .ac-q-title {
         font-size: 18px;
         font-weight: 600;
@@ -145,6 +147,7 @@
         font-size: 13px;
         color: #94a3b8;
         margin-bottom: 18px;
+        line-height: 1.45;
       }
 
       .ac-options {
@@ -167,7 +170,7 @@
       }
       .ac-option.selected {
         border-color: #a2dfe4;
-        background: rgba(162,223,228,0.06);
+        background: rgba(162,223,228,0.08);
       }
 
       .ac-survey-footer {
@@ -177,14 +180,17 @@
         align-items: center;
         border-top: 1px solid rgba(148,163,184,0.18);
       }
+
       .ac-steps {
         font-size: 12px;
         color: #94a3b8;
       }
+
       .ac-actions {
         display: flex;
         gap: 10px;
       }
+
       .ac-btn {
         border-radius: 999px;
         padding: 8px 18px;
@@ -205,78 +211,105 @@
 
   /* -------------------- BUILD OVERLAY -------------------- */
 
-  let overlay, bodyEl, stepLabel;
-
   function buildOverlay() {
     overlay = document.createElement("div");
     overlay.className = "ac-survey-overlay";
 
-    const panel = document.createElement("div");
-    panel.className = "ac-survey-panel";
-
-    panel.innerHTML = `
-      <div class="ac-survey-header">
-        <div class="ac-survey-eyebrow">Automated Clarity™</div>
-        <div class="ac-survey-title">HVAC Opportunity Scan</div>
-      </div>
-      <div class="ac-survey-body"></div>
-      <div class="ac-survey-footer">
-        <div class="ac-steps"></div>
-        <div class="ac-actions">
-          <button class="ac-btn" data-back>Back</button>
-          <button class="ac-btn primary" data-next>Next</button>
+    overlay.innerHTML = `
+      <div class="ac-survey-panel">
+        <div class="ac-survey-header">
+          <div class="ac-survey-eyebrow">Automated Clarity™</div>
+          <div class="ac-survey-title">HVAC Opportunity Scan</div>
+        </div>
+        <div class="ac-survey-body"></div>
+        <div class="ac-survey-footer">
+          <div class="ac-steps"></div>
+          <div class="ac-actions">
+            <button class="ac-btn" data-back>Back</button>
+            <button class="ac-btn primary" data-next>Next</button>
+          </div>
         </div>
       </div>
     `;
 
-    overlay.appendChild(panel);
     document.body.appendChild(overlay);
 
-    bodyEl = panel.querySelector(".ac-survey-body");
-    stepLabel = panel.querySelector(".ac-steps");
+    bodyEl = overlay.querySelector(".ac-survey-body");
+    stepLabel = overlay.querySelector(".ac-steps");
 
-    panel.querySelector("[data-back]").onclick = () => goStep(-1);
-    panel.querySelector("[data-next]").onclick = () => goStep(1);
+    overlay.querySelector("[data-back]").onclick = () => goStep(-1);
+    overlay.querySelector("[data-next]").onclick = () => goStep(1);
   }
 
   /* -------------------- RENDER -------------------- */
 
-  function render() {
+  function renderQuestion() {
     const q = questions[currentStep];
+
     bodyEl.innerHTML = `
       <div class="ac-q-title">${q.title}</div>
       <div class="ac-q-help">${q.help}</div>
       <div class="ac-options">
-        ${q.options
-          .map(
-            (opt, i) => `
+        ${q.options.map((opt, i) => `
           <div class="ac-option ${answers[q.id] === i ? "selected" : ""}" data-i="${i}">
             ${opt}
-          </div>`
-          )
-          .join("")}
+          </div>
+        `).join("")}
       </div>
     `;
 
     bodyEl.querySelectorAll(".ac-option").forEach(el => {
       el.onclick = () => {
-        answers[q.id] = parseInt(el.dataset.i, 10);
-        render();
+        answers[q.id] = Number(el.dataset.i);
+        renderQuestion();
       };
     });
 
     stepLabel.textContent = `Step ${currentStep + 1} of ${questions.length}`;
   }
 
+  function renderReveal() {
+    bodyEl.innerHTML = `
+      <div class="ac-q-title">What this quietly reveals</div>
+
+      <div class="ac-q-help">
+        Most HVAC shops don’t lose work because of bad service.
+        They lose it in the gaps between intent, follow-up, and consistency.
+      </div>
+
+      <div class="ac-q-help">
+        These gaps don’t show up on calm days.
+        They appear when things get busy — exactly when memory and manual systems break down.
+      </div>
+
+      <div class="ac-q-help">
+        The question now isn’t whether these gaps exist.
+        It’s whether something should quietly sit underneath your shop to close them.
+      </div>
+
+      <div style="margin-top:24px;">
+        <button class="ac-btn primary" data-close>Continue</button>
+      </div>
+    `;
+
+    stepLabel.textContent = "Scan complete";
+
+    bodyEl.querySelector("[data-close]").onclick = close;
+  }
+
   function goStep(dir) {
     if (dir > 0 && answers[questions[currentStep].id] == null) return;
+
     currentStep += dir;
+
     if (currentStep < 0) currentStep = 0;
+
     if (currentStep >= questions.length) {
-      close();
+      renderReveal();
       return;
     }
-    render();
+
+    renderQuestion();
   }
 
   function open() {
@@ -285,7 +318,7 @@
     overlay.classList.add("open");
     document.documentElement.style.overflow = "hidden";
     currentStep = 0;
-    render();
+    renderQuestion();
   }
 
   function close() {
