@@ -1,18 +1,19 @@
 /* ============================================================
    Automated Clarity™ — HVAC Opportunity Scan
-   GHL-SAFE / SCROLL-SAFE / FINAL
+   NETLIFY SAFE • SCROLL SAFE • FINAL
    ============================================================ */
 
 (function () {
 
-  /* -------------------- HARD STOP GHL SCROLL -------------------- */
+  /* ------------------------------------------------------------
+     CLICK CAPTURE — HARD STOP ANY DEFAULT BEHAVIOR
+     ------------------------------------------------------------ */
   document.addEventListener(
     "click",
     function (e) {
       const trigger = e.target.closest("#ac-survey-trigger");
       if (!trigger) return;
 
-      // KILL EVERYTHING GHL TRIES TO DO
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
@@ -20,11 +21,12 @@
       openSurvey();
       return false;
     },
-    true // 👈 CAPTURE PHASE — THIS IS THE KEY
+    true // capture phase
   );
 
-  /* -------------------- QUESTIONS (LOCKED) -------------------- */
-
+  /* ------------------------------------------------------------
+     LOCKED QUESTIONS
+     ------------------------------------------------------------ */
   const questions = [
     {
       id: "lead-entry",
@@ -94,8 +96,9 @@
   let step = 0;
   const answers = {};
 
-  /* -------------------- STYLES -------------------- */
-
+  /* ------------------------------------------------------------
+     STYLES (INJECT ONCE)
+     ------------------------------------------------------------ */
   function injectStyles() {
     if (document.getElementById("ac-survey-styles")) return;
 
@@ -167,8 +170,9 @@
     document.head.appendChild(s);
   }
 
-  /* -------------------- BUILD -------------------- */
-
+  /* ------------------------------------------------------------
+     BUILD OVERLAY
+     ------------------------------------------------------------ */
   function build() {
     overlay = document.createElement("div");
     overlay.className = "ac-survey-overlay";
@@ -176,14 +180,14 @@
     overlay.innerHTML = `
       <div class="ac-panel">
         <div class="ac-header">
-          <div class="ac-title">HVAC Opportunity Scan</div>
+          <div class="ac-title">Automated Clarity™ — HVAC Opportunity Scan</div>
         </div>
         <div class="ac-body"></div>
         <div class="ac-footer">
           <div id="ac-step"></div>
           <div>
-            <button class="ac-btn" id="ac-back">Back</button>
-            <button class="ac-btn primary" id="ac-next">Next</button>
+            <button class="ac-btn" id="ac-back" type="button">Back</button>
+            <button class="ac-btn primary" id="ac-next" type="button">Next</button>
           </div>
         </div>
       </div>
@@ -198,17 +202,19 @@
     overlay.querySelector("#ac-next").onclick = () => move(1);
   }
 
+  /* ------------------------------------------------------------
+     RENDER STEP
+     ------------------------------------------------------------ */
   function render() {
     const q = questions[step];
+
     bodyEl.innerHTML = `
       <div class="ac-q">${q.title}</div>
       <div class="ac-help">${q.help}</div>
-      ${q.options
-        .map(
-          (o, i) =>
-            `<div class="ac-opt ${answers[q.id] === i ? "selected" : ""}" data-i="${i}">${o}</div>`
-        )
-        .join("")}
+      ${q.options.map(
+        (o, i) =>
+          `<div class="ac-opt ${answers[q.id] === i ? "selected" : ""}" data-i="${i}">${o}</div>`
+      ).join("")}
     `;
 
     bodyEl.querySelectorAll(".ac-opt").forEach(el => {
@@ -223,23 +229,49 @@
 
   function move(dir) {
     if (dir > 0 && answers[questions[step].id] == null) return;
+
     step += dir;
-    if (step >= questions.length) closeSurvey();
-    else render();
+
+    if (step >= questions.length) {
+      closeSurvey();
+      // REVEAL REDIRECT (change later if needed)
+      window.location.href = "/reveal";
+    } else {
+      render();
+    }
   }
 
+  /* ------------------------------------------------------------
+     OPEN / CLOSE — SCROLL LOCK (NO JUMP)
+     ------------------------------------------------------------ */
   function openSurvey() {
+    const y = window.scrollY;
+
     injectStyles();
     if (!overlay) build();
+
+    // FREEZE PAGE IN PLACE
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${y}px`;
+    document.body.style.width = "100%";
+    document.body.dataset.scrollY = y;
+
     overlay.classList.add("open");
-    document.documentElement.style.overflow = "hidden";
+
     step = 0;
     render();
   }
 
   function closeSurvey() {
     overlay.classList.remove("open");
-    document.documentElement.style.overflow = "";
+
+    const y = document.body.dataset.scrollY || 0;
+
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.width = "";
+
+    window.scrollTo(0, parseInt(y, 10));
   }
 
 })();
