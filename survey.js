@@ -1,15 +1,15 @@
 /* ============================================================
    Automated Clarity™ — HVAC Opportunity Scan
-   NETLIFY SAFE • SCROLL SAFE • FINAL
+   NETLIFY SAFE • GHL SAFE • SCROLL-JUMP ELIMINATED
    ============================================================ */
 
 (function () {
 
   /* ------------------------------------------------------------
-     CLICK CAPTURE — HARD STOP ANY DEFAULT BEHAVIOR
+     HARD INTERCEPT — MOUSEDOWN (BEFORE FOCUS / BEFORE SCROLL)
      ------------------------------------------------------------ */
   document.addEventListener(
-    "click",
+    "mousedown",
     function (e) {
       const trigger = e.target.closest("#ac-survey-trigger");
       if (!trigger) return;
@@ -21,7 +21,7 @@
       openSurvey();
       return false;
     },
-    true // capture phase
+    true
   );
 
   /* ------------------------------------------------------------
@@ -97,7 +97,7 @@
   const answers = {};
 
   /* ------------------------------------------------------------
-     STYLES (INJECT ONCE)
+     STYLE INJECTION
      ------------------------------------------------------------ */
   function injectStyles() {
     if (document.getElementById("ac-survey-styles")) return;
@@ -108,9 +108,9 @@
       .ac-survey-overlay {
         position: fixed;
         inset: 0;
-        background: rgba(3,11,26,.88);
+        background: rgba(3,11,26,.9);
         backdrop-filter: blur(14px);
-        z-index: 99999;
+        z-index: 999999;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -130,16 +130,29 @@
         color: #e5e7eb;
         border-radius: 22px;
         overflow: hidden;
-        box-shadow: 0 40px 120px rgba(0,0,0,.65);
+        box-shadow: 0 40px 120px rgba(0,0,0,.7);
       }
       .ac-header {
         padding: 22px 26px 14px;
         border-bottom: 1px solid rgba(148,163,184,.18);
       }
-      .ac-title { font-size: 20px; font-weight: 600; }
-      .ac-body { padding: 26px; }
-      .ac-q { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
-      .ac-help { font-size: 13px; color: #94a3b8; margin-bottom: 18px; }
+      .ac-title {
+        font-size: 20px;
+        font-weight: 600;
+      }
+      .ac-body {
+        padding: 26px;
+      }
+      .ac-q {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .ac-help {
+        font-size: 13px;
+        color: #94a3b8;
+        margin-bottom: 18px;
+      }
       .ac-opt {
         border: 1px solid rgba(148,163,184,.25);
         border-radius: 14px;
@@ -203,7 +216,7 @@
   }
 
   /* ------------------------------------------------------------
-     RENDER STEP
+     RENDER
      ------------------------------------------------------------ */
   function render() {
     const q = questions[step];
@@ -234,7 +247,6 @@
 
     if (step >= questions.length) {
       closeSurvey();
-      // REVEAL REDIRECT (change later if needed)
       window.location.href = "/reveal";
     } else {
       render();
@@ -242,7 +254,7 @@
   }
 
   /* ------------------------------------------------------------
-     OPEN / CLOSE — SCROLL LOCK (NO JUMP)
+     OPEN / CLOSE — HARD FREEZE (NO SCROLL POSSIBLE)
      ------------------------------------------------------------ */
   function openSurvey() {
     const y = window.scrollY;
@@ -250,9 +262,10 @@
     injectStyles();
     if (!overlay) build();
 
-    // FREEZE PAGE IN PLACE
     document.body.style.position = "fixed";
     document.body.style.top = `-${y}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
     document.body.style.width = "100%";
     document.body.dataset.scrollY = y;
 
@@ -269,6 +282,8 @@
 
     document.body.style.position = "";
     document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
     document.body.style.width = "";
 
     window.scrollTo(0, parseInt(y, 10));
