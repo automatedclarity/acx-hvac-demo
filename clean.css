@@ -1,93 +1,102 @@
 /* ===============================
-   ACX CLEAN TYPOGRAPHY LAYER
+   HERO LAYOUT
    =============================== */
 
-html {
-  font-size: clamp(16px, 1.15vw, 18px);
+.acx-hero {
+  background: #030b1a;
+  color: #ffffff;
+  padding: clamp(80px, 10vw, 140px) 24px;
 }
 
-body {
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  line-height: 1.55;
+.acx-hero-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: clamp(48px, 6vw, 96px);
+  align-items: center;
 }
 
-/* Headings */
-h1 {
-  font-size: clamp(2.2rem, 4.2vw, 3.2rem);
-  line-height: 1.15;
+.acx-hero-copy h1 {
+  font-size: clamp(36px, 4.5vw, 56px);
+  line-height: 1.1;
+  margin-bottom: 24px;
 }
 
-h2 {
-  font-size: clamp(1.7rem, 3vw, 2.3rem);
+.acx-hero-copy p {
+  font-size: clamp(16px, 1.2vw, 18px);
+  margin: 6px 0;
+  color: #d4d8df;
 }
 
-h3 {
-  font-size: clamp(1.3rem, 2.2vw, 1.6rem);
+.acx-hero-copy strong {
+  color: #a2dfe4;
 }
 
-/* Body copy */
-p, li {
-  font-size: clamp(1rem, 1.15vw, 1.125rem);
+.acx-hero-sub {
+  margin-top: 24px;
+  max-width: 520px;
 }
 
-/* Section spacing sanity */
-section, .section {
-  padding-block: clamp(3rem, 8vw, 6rem);
-}
-
-/* Kill GHL font overrides */
-[class*="hl_"],
-[class^="heading-"],
-[class^="paragraph-"],
-[class^="sub-heading-"] {
-  font-size: inherit !important;
-  line-height: inherit !important;
-}
-/* ===============================
-   READABILITY WIDTH CONTROL
-   =============================== */
-
-.content,
-.wrap,
-.section-content {
-  max-width: 68ch;
-}
-/* ===============================
-   FINAL GHL OVERRIDES KILL
-   =============================== */
-
-* {
-  font-feature-settings: "kern" 1;
-}
-
-[class*="font-"],
-[class*="text-"],
-[class*="hl_"] {
-  font-size: inherit !important;
-  line-height: inherit !important;
-  letter-spacing: normal !important;
-}
-.acx-scan-btn-wrap {
-  margin-top: 48px;
-}
-
-.acx-scan-btn {
-  display: inline-block;
-  padding: 18px 48px;
-  border: 2px solid #6EC8D3;
-  border-radius: 14px;
-  font-size: clamp(18px, 1.2vw, 22px);
+.acx-hero-strong {
+  margin-top: 18px;
   font-weight: 600;
-  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #0A2333;
-  background: transparent;
-  text-decoration: none;
-  transition: all 0.28s ease;
+  color: #ffffff;
 }
 
-.acx-scan-btn:hover {
-  background: #6EC8D3;
-  color: #00141D;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(110, 200, 211, 0.25);
+/* ===============================
+   RESPONSIVE ORB (PERFECT CIRCLE)
+   =============================== */
+
+.acx-orb-wrapper {
+  width: clamp(220px, 32vw, 420px);
+  height: clamp(220px, 32vw, 420px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.acx-orb {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+}
+
+.acx-orb-glow,
+.acx-orb-ring,
+.acx-orb-core,
+.acx-orb-wave,
+.acx-orb-particles {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.acx-orb-core {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.acx-orb-brain img {
+  width: clamp(80px, 18%, 150px);
+  height: auto;
+  object-fit: contain;
+}
+
+/* ===============================
+   MOBILE STACK
+   =============================== */
+
+@media (max-width: 900px) {
+  .acx-hero-inner {
+    grid-template-columns: 1fr;
+    text-align: left;
+  }
+
+  .acx-orb-wrapper {
+    margin-top: 40px;
+  }
 }
