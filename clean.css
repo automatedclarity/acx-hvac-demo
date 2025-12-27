@@ -52,3 +52,18 @@ section, .section {
 .section-content {
   max-width: 68ch;
 }
+/* ===============================
+   FINAL GHL OVERRIDES KILL
+   =============================== */
+
+* {
+  font-feature-settings: "kern" 1;
+}
+
+[class*="font-"],
+[class*="text-"],
+[class*="hl_"] {
+  font-size: inherit !important;
+  line-height: inherit !important;
+  letter-spacing: normal !important;
+}
