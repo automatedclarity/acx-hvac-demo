@@ -43,3 +43,12 @@ section, .section {
   font-size: inherit !important;
   line-height: inherit !important;
 }
+/* ===============================
+   READABILITY WIDTH CONTROL
+   =============================== */
+
+.content,
+.wrap,
+.section-content {
+  max-width: 68ch;
+}
